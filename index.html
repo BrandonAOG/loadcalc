@@ -1182,4 +1182,37 @@ function calc(){
     '<div class="calc-line"><span>Pool pump (cont. motor) VA</span><span class="cv">'+fmt(pmVA_)+'</span></div>'
     +'<div class="calc-line"><span>Heater VA (3.5t'+( gasPh35_?' GAS':'')+'+5t'+(gasPh5_?' GAS':'')+'+spa'+(gasSpa_?' GAS':'')+') </span><span class="cv">'+fmt(heaterVA_)+' VA'+(gasPh35_||gasPh5_||gasSpa_?' (gas=500VA ctrl)':'')+' </span></div>'
     +'<div class="calc-line"><span>Largest continuous × 125% (NEC 430.24)</span><span class="cv">'+fmt(largest_)+' × 1.25 = '+fmt(largest_*1.25)+'</span></div>'
-    
+    +'<div class="calc-line"><span>Blower VA</span><span class="cv">'+fmt(blowerVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Pool light (120V → Phase A only)</span><span class="cv">'+fmt(lightVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Non-continuous + other loads</span><span class="cv">'+fmt(pncVA_total)+'</span></div>'
+    +'<div class="calc-line"><span>Phase A VA ÷ 120</span><span class="cv">'+fmt(phI_)+' ÷ 120 = '+poolPhA.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Phase B VA ÷ 120</span><span class="cv">'+fmt(phJ_)+' ÷ 120 = '+poolPhB.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Pool feeder VA in Step 3</span><span class="cv">'+fmt(Math.round(poolFdrVA))+' VA (auto)</span></div>'
+    +'<div class="calc-line"><span>Min. pool feeder wire (NEC 310.16 75°C)</span><span class="cv">'+poolWire(poolMax,isAl)+'</span></div>'
+    +'<div class="calc-line"><span>Pool panel EGC (NEC 250.122)</span><span class="cv">'+egcWire(poolSvc,isAl)+'</span></div>';
+}
+
+// ══ TABS ══
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    var panel=document.getElementById('tab-'+t.dataset.tab);
+    if(panel) panel.classList.add('active');
+  });
+});
+
+// ══ INIT ══
+window.addEventListener('load',function(){
+  buildAHU();
+  buildAppl();
+  buildPool();
+  addDryer(false,5000,1);
+  addCookItem('cooktop',false,0);
+  addCookItem('oven',false,0);
+  calc();
+});
+</script>
+</body>
+</html>
