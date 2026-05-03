@@ -431,10 +431,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       <div class="card-sub">Art. 220.82(B)(3) — Raw VA added to demand pool · 5,000–12,500 W in 500 W steps · Gas excludes individual appliance</div>
     </div>
     <div class="card-body">
-      <label class="chk-row">
-        <input type="checkbox" id="gas_all" onchange="calc()">
-        <span>☑ ALL GAS Kitchen — zero out all cooking loads</span>
-      </label>
+
       <div id="cook_cooktops"><div style="font-weight:600;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Cooktops</div></div>
       <button class="btn btn-add btn-sm" style="margin-bottom:14px;" onclick="addCookItem('cooktop')">+ Add Cooktop</button>
       <div id="cook_ovens"><div style="font-weight:600;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ovens / Ranges</div></div>
@@ -455,13 +452,42 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       <div class="card-title">Pool Panel Feeder Calculation</div>
       <div class="card-sub">NEC 680 · Largest continuous motor @ 125% (NEC 430.24) · Phase A &amp; B split · Pool VA included in Step 3</div>
     </div>
-    <div class="card-body">
+
+    <!-- Inner sub-tabs -->
+    <div style="display:flex;border-bottom:2px solid var(--border);background:var(--surface2);">
+      <div id="ptab-loads" onclick="showPoolTab('loads')" style="padding:9px 16px;font-size:10px;font-weight:700;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer;color:var(--blue);border-bottom:3px solid var(--blue);margin-bottom:-2px;user-select:none;text-transform:uppercase;">Pool Loads</div>
+      <div id="ptab-extra" onclick="showPoolTab('extra')" style="padding:9px 16px;font-size:10px;font-weight:700;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer;color:var(--text3);border-bottom:3px solid transparent;margin-bottom:-2px;user-select:none;text-transform:uppercase;">Additional Loads</div>
+    </div>
+
+    <!-- Sub-panel: Pool Loads -->
+    <div id="ppanel-loads" class="card-body">
       <div id="pool_rows"></div>
       <div style="padding:10px 0 4px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-add btn-sm" onclick="addPoolPump()">+ Add Pool Pump</button>
         <button class="btn btn-add btn-sm" onclick="addPoolNC()">+ Add Non-Continuous Load</button>
       </div>
-      <div class="chips" style="margin-top:10px;">
+    </div>
+
+    <!-- Sub-panel: Additional Loads -->
+    <div id="ppanel-extra" class="card-body" style="display:none;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Add any extra loads on this pool sub-panel. 120V loads go to Phase A only; 240V loads split across both phases.</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--surface2);">
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:6px 8px;border-bottom:2px solid var(--border);text-align:left;">Load Name</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:6px 8px;border-bottom:2px solid var(--border);text-align:center;width:72px;">Voltage</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:6px 8px;border-bottom:2px solid var(--border);text-align:right;width:110px;">VA</th>
+            <th style="width:36px;border-bottom:2px solid var(--border);"></th>
+          </tr>
+        </thead>
+        <tbody id="pool_extra_loads"></tbody>
+      </table>
+      <button class="btn btn-add btn-sm" style="margin-top:10px;" onclick="addPoolExtra()">+ Add Load</button>
+    </div>
+
+    <!-- Results always visible -->
+    <div class="card-body" style="border-top:1px solid var(--border);padding-top:12px;">
+      <div class="chips">
         <div class="chip hl"><div class="cl">Phase A Amps</div><div class="cv" id="rp_phA">—</div><div class="cu">A</div></div>
         <div class="chip hl"><div class="cl">Phase B Amps</div><div class="cv" id="rp_phB">—</div><div class="cu">A</div></div>
         <div class="chip gr"><div class="cl">Min. Pool Feeder</div><div class="cv" id="rp_wire">—</div><div class="cu" id="rp_mat">Copper</div></div>
@@ -620,7 +646,7 @@ var APPLS=[
   {id:'frz',  name:'Freezer',            qty:1, va:600,   volt:'120', canGas:false, isMotor:false, vaOpts:[600,700,800,900,1000]},
   {id:'dw',   name:'Dishwasher',         qty:1, va:1030,  volt:'120', canGas:false, isMotor:false, vaOpts:[1030,1100,1200,1300,1400]},
   {id:'disp', name:'Disposal',           qty:1, va:828,   volt:'120', canGas:false, isMotor:true,  vaOpts:[]},
-  {id:'rh',   name:'Range Hood',         qty:1, va:540,   volt:'120', canGas:true,  isMotor:false, vaOpts:[540,400,700,1200], gasVA:0},
+  {id:'rh',   name:'Range Hood',         qty:1, va:540,   volt:'120', canGas:false, isMotor:false, vaOpts:[540,400,700,1200]},
   {id:'mw',   name:'Microwave',          qty:1, va:1400,  volt:'120', canGas:false, isMotor:false, vaOpts:[1400,1000,1100,1200,1300,1500,1700]},
   {id:'ice',  name:'Ice Maker',          qty:0, va:1440,  volt:'120', canGas:false, isMotor:false, vaOpts:[1440,1600,1800,900]},
   {id:'mini', name:'Mini Fridge',        qty:0, va:340,   volt:'120', canGas:false, isMotor:false, vaOpts:[340,170,230,288]},
@@ -670,7 +696,7 @@ function makeVAcell(id, a, customId){
     for(var i=0;i<MOTOR_OPTS.length;i++){
       var mo=MOTOR_OPTS[i];
       var va240=mo.hp==='custom'?0:hpVA(mo.hp,240);
-      var lbl=mo.hp==='custom'?'— type VA below —':mo.label+' ('+Math.round(va240)+' VA @240V)';
+      var lbl=mo.hp==='custom'?'— type VA below —':mo.label+' — '+Math.round(va240)+' VA';
       var s=(mo.hp!=='custom'&&Math.round(va240)===a.va)?' selected':'';
       if(mo.hp==='custom') s=a.va===0?' selected':'';
       sel+='<option value="'+(mo.hp==='custom'?'custom':va240)+'"'+s+'>'+lbl+'</option>';
@@ -911,7 +937,7 @@ function addPoolPump(){
   div.id='ppump_'+n;
   div.innerHTML='<span class="pool-lbl">'
     +'Pool Pump '+n+' (continuous)'
-    +' <select id="ppvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +' <select id="ppvolt_'+n+'" onchange="updateMotorVolt(\'ppva_\'+'+n+',this.value);calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
     +'<option value="240" selected>240V</option><option value="120">120V</option>'
     +'</select>'
     +'</span>'
@@ -932,7 +958,7 @@ function addPoolNC(){
   div.id='pnc_'+n;
   div.innerHTML='<span class="pool-lbl">'
     +'<input type="text" id="pncname_'+n+'" value="Non-continuous Load '+n+'" style="font-size:12px;border:1px solid var(--border);border-radius:4px;padding:4px 7px;width:160px;">'
-    +' <select id="pncvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +' <select id="pncvolt_'+n+'" onchange="updateMotorVolt(\'pncva_\'+'+n+',this.value);calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
     +'<option value="240" selected>240V</option><option value="120">120V</option>'
     +'</select>'
     +'</span>'
@@ -949,6 +975,82 @@ function removePoolNC(n){var e=document.getElementById('pnc_'+n);if(e)e.remove()
 function addPoolLoad(){ addPoolNC(); }
 function removePoolLoad(n){ removePoolNC(n); }
 
+// ── Pool panel inner sub-tabs ──
+function showPoolTab(name){
+  ['loads','extra'].forEach(function(p){
+    var panel=document.getElementById('ppanel-'+p);
+    var tab=document.getElementById('ptab-'+p);
+    if(!panel||!tab) return;
+    if(p===name){
+      panel.style.display='block';
+      tab.style.color='var(--blue)';
+      tab.style.borderBottom='3px solid var(--blue)';
+    } else {
+      panel.style.display='none';
+      tab.style.color='var(--text3)';
+      tab.style.borderBottom='3px solid transparent';
+    }
+  });
+}
+
+// ── Additional pool loads ──
+var poolExtraCount=0;
+function addPoolExtra(){
+  var n=++poolExtraCount;
+  var tbody=document.getElementById('pool_extra_loads');
+  if(!tbody) return;
+  var tr=document.createElement('tr');
+  tr.id='pex_'+n;
+  tr.style.borderBottom='1px solid var(--border)';
+  tr.innerHTML=
+    '<td style="padding:5px 6px;">'
+    +'<input type="text" id="pexname_'+n+'" value="Load '+n+'" '
+    +'style="border:1px solid var(--border);border-radius:4px;padding:5px 7px;'
+    +'font-family:Inter,sans-serif;font-size:12px;width:100%;min-width:100px;">'
+    +'</td>'
+    +'<td style="padding:5px 6px;text-align:center;">'
+    +'<select id="pexvolt_'+n+'" onchange="calc()" '
+    +'style="border:1px solid var(--border);border-radius:4px;padding:5px 7px;'
+    +'font-size:12px;width:100%;background:#fff;cursor:pointer;">'
+    +'<option value="240" selected>240V</option>'
+    +'<option value="120">120V</option>'
+    +'</select>'
+    +'</td>'
+    +'<td style="padding:5px 6px;">'
+    +'<input type="number" id="pexva_'+n+'" value="0" min="0" oninput="calc()" '
+    +'style="border:1px solid var(--border);border-radius:4px;padding:5px 7px;'
+    +'font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;width:100%;">'
+    +'</td>'
+    +'<td style="padding:5px 4px;text-align:center;">'
+    +'<button class="btn btn-remove" onclick="removePoolExtra('+n+')" style="padding:3px 7px;font-size:11px;">\u2715</button>'
+    +'</td>';
+  tbody.appendChild(tr);
+  calc();
+}
+function removePoolExtra(n){
+  var r=document.getElementById('pex_'+n);
+  if(r) r.remove();
+  calc();
+}
+
+
+function updateMotorVolt(selId, newVolt){
+  // Rebuild a motor dropdown at the new voltage, preserving nearest VA
+  var sel=document.getElementById(selId);
+  if(!sel) return;
+  var oldVA=parseFloat(sel.value)||0;
+  var v=parseInt(newVolt)||240;
+  var html='<option value="0">— none —</option>';
+  for(var i=1;i<MOTOR_OPTS.length;i++){
+    var mo=MOTOR_OPTS[i];
+    var va=hpVA(mo.hp,v);
+    var rounded=Math.round(va);
+    // Select the closest match to old VA
+    var sel_attr=Math.abs(rounded-oldVA)<50?' selected':'';
+    html+='<option value="'+rounded+'"'+sel_attr+'>'+mo.label+' — '+rounded+' VA</option>';
+  }
+  sel.innerHTML=html;
+}
 
 function buildMotorSel(id, defVA, volt){
   var s='<select id="'+id+'" onchange="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:5px 6px;font-size:11px;background:#fff;width:100%;">';
@@ -958,7 +1060,7 @@ function buildMotorSel(id, defVA, volt){
     var va=hpVA(mo.hp, parseInt(volt)||240);
     var rounded=Math.round(va);
     var sel=rounded===defVA?' selected':'';
-    s+='<option value="'+rounded+'"'+sel+'>'+mo.label+' ('+rounded+' VA @'+volt+'V)</option>';
+    s+='<option value="'+rounded+'"'+sel+'>'+mo.label+' — '+rounded+' VA</option>';
   }
   s+='</select>';
   return s;
@@ -1002,27 +1104,49 @@ function calc(){
   var blowerVA_=gv('va_blower');
   var lightVA_=gv('qty_plight')*300;
   // Dynamic pool pumps (continuous motors)
-  var pmVA_=0;
+  // Dynamic pool pumps — track 120V and 240V separately
+  var pmVA240_=0, pmVA120_=0;
   for(var n=1;n<=poolPumpCount;n++){
     if(!document.getElementById('ppump_'+n)) continue;
-    pmVA_+=gv('ppva_'+n);
+    var ppV_=parseInt(gs('ppvolt_'+n))||240;
+    if(ppV_===120) pmVA120_+=gv('ppva_'+n);
+    else           pmVA240_+=gv('ppva_'+n);
   }
-  // Dynamic non-continuous loads
-  var pncVA_=0;
+  var pmVA_=pmVA240_+pmVA120_;  // total for continuous motor sizing
+  // Dynamic non-continuous loads — track 120V and 240V separately
+  var pncVA240_=0, pncVA120_=0;
   for(var n=1;n<=poolNcCount;n++){
     if(!document.getElementById('pnc_'+n)) continue;
-    var pncVolt_=parseInt(gs('pncvolt_'+n))||240;
-    pncVA_+=gv('pncva_'+n);
+    var pncV_=parseInt(gs('pncvolt_'+n))||240;
+    if(pncV_===120) pncVA120_+=gv('pncva_'+n);
+    else            pncVA240_+=gv('pncva_'+n);
+  }
+  var pncVA_=pncVA240_+pncVA120_;
+  // Additional pool loads (Extra Loads sub-tab): split by voltage
+  var pexVA240_=0, pexVA120_=0;
+  for(var n=1;n<=poolExtraCount;n++){
+    if(!document.getElementById('pex_'+n)) continue;
+    var pexV_=parseInt(gs('pexvolt_'+n))||240;
+    if(pexV_===120) pexVA120_+=gv('pexva_'+n);
+    else            pexVA240_+=gv('pexva_'+n);
   }
   // Total pool sub-panel feeder VA = sum of all pool loads
   // Per NEC, the feeder must carry the total demand of the sub-panel
   // We use the larger of Phase A or B × 240 as the feeder VA
-  var contArr_=[pmVA_,heaterVA_].filter(function(x){return x>0;});
+  // Largest continuous motor @ 125% (NEC 430.24)
+  // Only 240V loads are split 50/50 across phases; 120V loads go to Phase A only
+  var contArr_=[pmVA240_,heaterVA_].filter(function(x){return x>0;});
   var largest_=contArr_.length?Math.max.apply(null,contArr_):0;
   var restCont_=contArr_.reduce(function(a,b){return a+b;},0)-largest_;
-  var contAdj_=largest_*1.25+restCont_;
-  var phI_=contAdj_/2+blowerVA_/2+lightVA_+pncVA_/2;
-  var phJ_=contAdj_/2+blowerVA_/2+pncVA_/2;
+  var contAdj240_=largest_*1.25+restCont_;
+  // Blower voltage
+  var blowerVolt_=parseInt(gs('pvolt_blower'))||240;
+  var blowerPhA_=(blowerVolt_===120)?blowerVA_:(blowerVA_/2);
+  var blowerPhB_=(blowerVolt_===120)?0:(blowerVA_/2);
+  // Phase A: half of 240V cont + 120V pump loads + half of 240V NC + all 120V NC + lights
+  var phI_=contAdj240_/2 + pmVA120_*1.25 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_;
+  // Phase B: half of 240V cont + half of 240V NC
+  var phJ_=contAdj240_/2 + blowerPhB_ + pncVA240_/2;
   var poolPhA_=phI_/120, poolPhB_=phJ_/120;
   var poolFdrVA=Math.max(poolPhA_,poolPhB_)*240;  // feeder VA for Step 3
   var tc_pool=document.getElementById('tot_pool_panel');
@@ -1072,21 +1196,21 @@ function calc(){
   sv('r4_tot',s4);
 
   // ── Step 5 ──
-  // Step 5: Optional Method — raw VA; gas appliances add ignition/control VA only
-  var allGas=gc('gas_all'), s5=0;
+  // Step 5: Optional Method — raw VA; gas adds ignition/control VA only
+  var s5=0;
   for(var n=1;n<=ctCount;n++){
     if(!document.getElementById('ci_cooktop_'+n)) continue;
-    if(!allGas&&gc('gas_cooktop_'+n)){
+    if(gc('gas_cooktop_'+n)){
       s5+=150;  // gas cooktop: 150 VA ignition/control
-    } else if(!allGas){
+    } else {
       s5+=gv('va_cooktop_'+n);
     }
   }
   for(var n=1;n<=ovCount;n++){
     if(!document.getElementById('ci_oven_'+n)) continue;
-    if(!allGas&&gc('gas_oven_'+n)){
+    if(gc('gas_oven_'+n)){
       s5+=500;  // gas range/oven: 500 VA ignition/control
-    } else if(!allGas){
+    } else {
       s5+=gv('va_oven_'+n);
     }
   }
@@ -1165,11 +1289,10 @@ function calc(){
     +'<div class="calc-line"><span>EGC (NEC 250.122, OCPD='+svcSize+'A)</span><span class="cv">'+egc+'</span></div>'
     +'<div class="calc-line"><span>Generator kW needed</span><span class="cv">'+kw.toFixed(1)+' kW → '+gen+'</span></div>';
 
-  // ── Pool panel calc (reuse values computed in Step 3 above) ──
-  // Add pool extra loads to phase calc
+  // ── Pool panel calc ──
   var pncVA_total=pncVA_;
-  var phI=contAdj_/2+blowerVA_/2+lightVA_+pncVA_total/2;
-  var phJ=contAdj_/2+blowerVA_/2+pncVA_total/2;
+  var phI_=contAdj240_/2 + pmVA120_*1.25 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_ + pexVA240_/2 + pexVA120_;
+  var phJ_=contAdj240_/2 + blowerPhB_ + pncVA240_/2 + pexVA240_/2;
   var poolPhA=phI_/120, poolPhB=phJ_/120, poolMax=Math.max(poolPhA,poolPhB);
   var poolSvc=minSvc(poolMax);
   sv('rp_phA',poolPhA.toFixed(2));sv('rp_phB',poolPhB.toFixed(2));
