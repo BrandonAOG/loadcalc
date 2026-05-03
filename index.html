@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Residential Load Calc — NEC 2020</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F0F2F5;--surface:#fff;--surface2:#F7F8FC;--border:#E2E6EF;--border2:#C8D0E0;
+  --text:#1C2333;--text2:#4A5568;--text3:#8896AA;
+  --blue:#1B4FD8;--blue-lt:#EEF2FF;--blue-dk:#1338A8;
+  --green:#0A8F5E;--green-lt:#EDFAF4;
+  --amber:#C97A00;--amber-lt:#FFFBEB;
+  --red:#D62828;--red-lt:#FFF0F0;
+  --yellow:#F5B800;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.04);
+  --r:8px;--rs:5px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+
+/* ── TOP BAR ── */
+.topbar{background:#1C2333;color:#fff;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.topbar-brand{font-weight:700;font-size:16px;letter-spacing:.3px;color:#fff;}
+.topbar-brand span{color:var(--yellow);}
+.topbar-right{display:flex;gap:6px;}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);}
+.btn-ghost:hover{background:rgba(255,255,255,.2);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-add{background:var(--green-lt);color:var(--green);border:1px solid #9fe8ce;}
+.btn-add:hover{background:#d0f5e8;}
+.btn-remove{background:var(--red-lt);color:var(--red);border:1px solid #f5b0b0;padding:3px 8px;font-size:11px;}
+.btn-remove:hover{background:#ffe0e0;}
+
+/* ── JOB BANNER ── */
+.job-banner{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(min-width:600px){.job-banner{grid-template-columns:repeat(4,1fr);}}
+.jf label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:2px;}
+.jf input{width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--surface2);}
+.jf input:focus{outline:none;border-color:var(--blue);}
+
+/* ── TABS ── */
+.tabs-bar{background:var(--surface);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;position:sticky;top:50px;z-index:190;scrollbar-width:none;}
+.tabs-bar::-webkit-scrollbar{display:none;}
+.tab{padding:11px 14px;font-size:12px;font-weight:600;color:var(--text2);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;margin-bottom:-2px;user-select:none;flex-shrink:0;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* ── MAIN ── */
+.main{padding:14px 12px;max-width:960px;margin:0 auto;}
+@media(min-width:600px){.main{padding:16px 20px;}}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;}
+.card-head{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:6px;}
+.step-tag{background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+.card-title{font-size:13px;font-weight:700;flex:1;}
+.card-sub{font-size:11px;color:var(--text3);width:100%;}
+.card-body{padding:14px;}
+
+/* ── FORM ── */
+.fg{display:grid;gap:10px;}
+.fg-2{grid-template-columns:1fr 1fr;}
+.fg-3{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:500px){.fg-2,.fg-3{grid-template-columns:1fr 1fr;}}
+.field{display:flex;flex-direction:column;gap:3px;}
+.field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);}
+.field input,.field select,.field textarea{border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:#fff;width:100%;transition:border .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);}
+.field input[type=number]{font-family:'JetBrains Mono',monospace;font-weight:500;text-align:right;}
+.hint{font-size:10px;color:var(--text3);}
+
+/* Custom number with text fallback */
+.va-wrap{position:relative;}
+.va-wrap input{padding-right:36px;}
+.va-wrap .unit-lbl{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text3);pointer-events:none;}
+
+/* ── CHECKBOX ROW ── */
+.chk-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface2);cursor:pointer;margin-bottom:8px;}
+.chk-row:hover{background:var(--amber-lt);}
+.chk-row input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;}
+.chk-row span{font-size:12px;font-weight:500;}
+
+/* ── RESULTS CHIPS ── */
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;}
+.chip .cl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);}
+.chip .cv{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;color:var(--text);line-height:1.2;margin-top:1px;word-break:break-all;}
+.chip .cu{font-size:10px;color:var(--text3);}
+.chip.hl{background:var(--blue-lt);border-color:#c7d4f9;}
+.chip.hl .cv{color:var(--blue);}
+.chip.gr{background:var(--green-lt);border-color:#9fe8ce;}
+.chip.gr .cv{color:var(--green);}
+.chip.am{background:var(--amber-lt);border-color:#fcd97a;}
+.chip.am .cv{color:var(--amber);}
+
+/* ── SUMMARY PANEL ── */
+.sum-panel{background:linear-gradient(135deg,#1C2333,#1B4FD8);border-radius:var(--r);padding:16px;color:#fff;margin-bottom:14px;}
+.sum-panel h2{font-size:13px;font-weight:700;opacity:.8;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;}
+.sum-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+@media(min-width:500px){.sum-chips{grid-template-columns:repeat(3,1fr);}}
+@media(min-width:700px){.sum-chips{grid-template-columns:repeat(4,1fr);}}
+.sc{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:10px 12px;}
+.sc .sl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;opacity:.65;}
+.sc .sv{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;margin-top:2px;line-height:1.1;word-break:break-all;}
+.sc .su{font-size:10px;opacity:.55;margin-top:1px;}
+.sc.big{background:rgba(245,184,0,.12);border-color:rgba(245,184,0,.35);}
+.sc.big .sv{color:var(--yellow);font-size:22px;}
+
+/* ── LOAD BREAKDOWN TABLE ── */
+.br-table{width:100%;border-collapse:collapse;margin-top:6px;}
+.br-table td{padding:8px 6px;border-bottom:1px solid var(--border);font-size:13px;}
+.br-table tr:last-child td{border-bottom:none;}
+.br-table .bv{font-family:'JetBrains Mono',monospace;font-weight:600;text-align:right;white-space:nowrap;}
+.br-table .bl{color:var(--text2);}
+.br-total td{font-weight:700;border-top:2px solid var(--border);padding-top:10px;}
+.br-demand td{color:var(--blue);font-weight:700;}
+.br-note{font-size:11px;color:var(--text3);}
+
+/* ── AHU TABLE ── */
+.ahu-row{display:grid;grid-template-columns:50px 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center;}
+.ahu-row:last-child{border-bottom:none;}
+.ahu-lbl{font-weight:700;font-size:12px;color:var(--blue);}
+.ahu-row select{border:1px solid var(--border);border-radius:var(--rs);padding:7px 8px;font-family:'Inter',sans-serif;font-size:12px;width:100%;background:#fff;}
+.ahu-row select:focus{outline:none;border-color:var(--blue);}
+
+/* ── APPLIANCE TABLE ── */
+.appl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.appl-tbl{width:100%;border-collapse:collapse;min-width:480px;}
+.appl-tbl th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:7px 8px;border-bottom:2px solid var(--border);background:var(--surface2);text-align:left;white-space:nowrap;}
+.appl-tbl td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.appl-tbl tr:hover td{background:var(--surface2);}
+.appl-tbl input,.appl-tbl select{border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-family:'Inter',sans-serif;font-size:12px;width:100%;background:#fff;}
+.appl-tbl input[type=number]{font-family:'JetBrains Mono',monospace;text-align:right;}
+.appl-tbl input:focus,.appl-tbl select:focus{outline:none;border-color:var(--blue);}
+.appl-tbl .tot-cell{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;text-align:right;white-space:nowrap;}
+.appl-tbl .gas-cell label{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;justify-content:center;}
+.appl-tbl .gas-cell input{width:13px;height:13px;accent-color:var(--amber);}
+.appl-tbl .volt-cell select{font-size:10px;padding:4px 3px;}
+
+/* ── COOKING SECTION ── */
+.cook-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;margin-bottom:10px;}
+.cook-item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cook-item-title{font-weight:600;font-size:13px;}
+.cook-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:400px){.cook-fields{grid-template-columns:1fr;}}
+
+/* ── DRYER SECTION ── */
+.dryer-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;margin-bottom:10px;}
+.dryer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+
+/* ── POOL ── */
+.pool-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;}
+.pool-row:last-child{border-bottom:none;}
+.pool-lbl{font-size:13px;color:var(--text2);flex:1;}
+.pool-inp{width:160px;flex-shrink:0;}
+.pool-inp select,.pool-inp input{border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;font-family:'Inter',sans-serif;font-size:12px;width:100%;background:#fff;}
+
+/* ── CALC STEPS SHOW ── */
+.calc-show{background:#F7F8FC;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-top:12px;font-size:12px;color:var(--text2);}
+.calc-show h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;}
+.calc-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);}
+.calc-line:last-child{border-bottom:none;font-weight:700;color:var(--text);}
+.calc-line .cv{font-family:'JetBrains Mono',monospace;font-weight:500;}
+
+/* ── HELP ── */
+.help-sec{margin-bottom:20px;}
+.help-sec h3{font-size:14px;font-weight:700;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+.help-sec p,.help-sec li{font-size:13px;color:var(--text2);line-height:1.65;}
+.help-sec ul{padding-left:18px;margin-top:4px;}
+.help-sec li{margin-bottom:4px;}
+.hbadge{display:inline-block;background:var(--blue-lt);color:var(--blue);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin-right:3px;}
+.hnote{background:var(--amber-lt);border:1px solid #fcd97a;border-radius:var(--rs);padding:8px 12px;font-size:12px;color:#92400e;margin-top:6px;}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:var(--border);margin:12px 0;}
+
+/* ── MOTOR VOLTAGE ROW ── */
+.motor-volt-row{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.motor-volt-row label{font-size:11px;color:var(--text3);white-space:nowrap;}
+.motor-volt-row select{border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;font-size:12px;background:#fff;flex:1;}
+
+/* ── INLINE EDITABLE VA ── */
+.va-combo{display:flex;gap:4px;align-items:center;}
+.va-combo select{flex:1;}
+.va-combo input{width:90px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;background:#fff;}
+
+@media print{
+  .topbar,.tabs-bar,.btn{display:none!important;}
+  .tab-panel{display:block!important;}
+  .sum-panel{background:#1C2333!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .main{padding:0;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">SWFL <span>LOAD</span> CALC <span style="font-size:10px;opacity:.5;font-weight:400;">NEC 2020</span></div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="window.print()">⎙ Print</button>
+    <button class="btn btn-primary" onclick="if(confirm('Reset all?'))location.reload()">↺ Reset</button>
+  </div>
+</div>
+
+<div class="job-banner">
+  <div class="jf"><label>Company</label><input type="text" id="j_co" value=""></div>
+  <div class="jf"><label>Address</label><input type="text" id="j_addr" value=""></div>
+  <div class="jf"><label>City / State / Zip</label><input type="text" id="j_city" value=""></div>
+  <div class="jf"><label>Phone</label><input type="text" id="j_phone" value=""></div>
+</div>
+
+<div class="tabs-bar">
+  <div class="tab active"  data-tab="summary">📊 Summary</div>
+  <div class="tab" data-tab="step1">Step 1</div>
+  <div class="tab" data-tab="step2">Step 2 · HVAC</div>
+  <div class="tab" data-tab="step3">Step 3 · Appliances</div>
+  <div class="tab" data-tab="step4">Step 4 · Dryer</div>
+  <div class="tab" data-tab="step5">Step 5 · Cooking</div>
+  <div class="tab" data-tab="pool">Pool Panel</div>
+  <div class="tab" data-tab="help">❓ Help</div>
+</div>
+
+<div class="main">
+
+<!-- ══ SUMMARY ══ -->
+<div class="tab-panel active" id="tab-summary">
+
+  <div class="sum-panel">
+    <h2>NEC 2020 Art. 220.82 — Optional Method — Residential Service</h2>
+    <div class="sum-chips">
+      <div class="sc big"><div class="sl">Min. Generator</div><div class="sv" id="s_gen">—</div><div class="su" id="s_fuel">Propane LP</div></div>
+      <div class="sc"><div class="sl">Service Demand</div><div class="sv" id="s_dem">—</div><div class="su">VA</div></div>
+      <div class="sc"><div class="sl">@ 240V, 1φ</div><div class="sv" id="s_amps">—</div><div class="su">Amperes</div></div>
+      <div class="sc"><div class="sl">Min. Service</div><div class="sv" id="s_svc">—</div><div class="su">Amperes</div></div>
+      <div class="sc"><div class="sl">Neutral Demand</div><div class="sv" id="s_neut">—</div><div class="su">Amperes</div></div>
+      <div class="sc"><div class="sl">Feeder</div><div class="sv" id="s_feed">—</div><div class="su" id="s_mat">Copper</div></div>
+      <div class="sc"><div class="sl">Neutral Wire</div><div class="sv" id="s_nwire">—</div><div class="su">Conductor</div></div>
+      <div class="sc"><div class="sl">EGC</div><div class="sv" id="s_egc">—</div><div class="su">NEC 250.122</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">⚙️ Configuration</div></div>
+    <div class="card-body">
+      <div class="fg fg-3">
+        <div class="field"><label>Fuel Source</label>
+          <select id="fuel" onchange="calc()">
+            <option value="propane" selected>Propane (LP)</option>
+            <option value="natgas">Natural Gas (NG)</option>
+          </select>
+        </div>
+        <div class="field"><label>Conductor Material</label>
+          <select id="conductor" onchange="calc()">
+            <option value="cu" selected>Copper</option>
+            <option value="al">Aluminum</option>
+          </select>
+        </div>
+        <div class="field"><label>Feeder Sets</label>
+          <select id="sets" onchange="calc()">
+            <option value="1" selected>1 Set</option>
+            <option value="2">2 Sets</option>
+            <option value="3">3 Sets</option>
+            <option value="4">4 Sets</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Load Breakdown — Optional Method</div></div>
+    <div class="card-body" style="padding:10px 14px;">
+      <table class="br-table">
+        <tr><td class="bl">Step 1 — Gen. Lighting, Sm. Appl. &amp; Laundry</td><td class="bv" id="br1">—</td></tr>
+        <tr><td class="bl">Step 2 — A/C or Heat (largest)</td><td class="bv" id="br2">—</td></tr>
+        <tr><td class="bl">Step 3 — Fixed Appliances (raw VA)</td><td class="bv" id="br3">—</td></tr>
+        <tr><td class="bl">Step 4 — Dryer Demand</td><td class="bv" id="br4">—</td></tr>
+        <tr><td class="bl">Step 5 — Cooking Demand (Col C)</td><td class="bv" id="br5">—</td></tr>
+        <tr class="br-total"><td>Total Connected Load</td><td class="bv" id="br_tot">—</td></tr>
+        <tr class="br-demand">
+          <td>Service Demand<br><span class="br-note">First 10,000 VA @ 100%, remainder @ 40%</span></td>
+          <td class="bv" id="br_dem">—</td>
+        </tr>
+      </table>
+
+      <div class="calc-show">
+        <h4>220.82 Calculation Steps</h4>
+        <div id="calc_detail">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ STEP 1 ══ -->
+<div class="tab-panel" id="tab-step1">
+  <div class="card">
+    <div class="card-head">
+      <span class="step-tag">STEP 1</span>
+      <div class="card-title">General Lighting, Small Appliance &amp; Laundry</div>
+      <div class="card-sub">Art. 220.82(B)(1)(2)(3) — 3 VA/sq ft + 1,500 VA per required circuit</div>
+    </div>
+    <div class="card-body">
+      <div class="fg fg-3">
+        <div class="field"><label>Floor Area (sq ft)</label>
+          <input type="number" id="sqft" value="3000" min="0" oninput="calc()">
+          <span class="hint">3 VA × sq ft</span>
+        </div>
+        <div class="field"><label>Small Appl. Circuits</label>
+          <input type="number" id="smapp" value="2" min="2" oninput="calc()">
+          <span class="hint">Min 2 req. · 1,500 VA ea.</span>
+        </div>
+        <div class="field"><label>Laundry Circuits</label>
+          <input type="number" id="laundry" value="1" min="1" oninput="calc()">
+          <span class="hint">Min 1 req. · 1,500 VA ea.</span>
+        </div>
+      </div>
+      <div class="chips">
+        <div class="chip"><div class="cl">Gen. Lighting</div><div class="cv" id="r1_gl">—</div><div class="cu">VA</div></div>
+        <div class="chip"><div class="cl">Sm. Appliance</div><div class="cv" id="r1_sa">—</div><div class="cu">VA</div></div>
+        <div class="chip"><div class="cl">Laundry</div><div class="cv" id="r1_lc">—</div><div class="cu">VA</div></div>
+        <div class="chip hl"><div class="cl">Step 1 Total</div><div class="cv" id="r1_tot">—</div><div class="cu">VA</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 2 ══ -->
+<div class="tab-panel" id="tab-step2">
+  <div class="card">
+    <div class="card-head">
+      <span class="step-tag">STEP 2</span>
+      <div class="card-title">A/C Condensers &amp; Fixed Electric Space Heating</div>
+      <div class="card-sub">Art. 220.82(C) — Largest of: Heat × 65% (≤4 units) or 40% (&gt;4), vs A/C/HP @ 100%</div>
+    </div>
+    <div class="card-body" style="padding:8px 14px;">
+      <div id="ahu_rows"></div>
+      <div class="chips">
+        <div class="chip"><div class="cl">Total Heating VA</div><div class="cv" id="r2_heat">—</div><div class="cu">VA</div></div>
+        <div class="chip"><div class="cl">Total Cooling VA</div><div class="cv" id="r2_cool">—</div><div class="cu">VA</div></div>
+        <div class="chip"><div class="cl">Demand Factor</div><div class="cv" id="r2_hf">65%</div><div class="cu">applied to heat</div></div>
+        <div class="chip hl"><div class="cl">Step 2 Load</div><div class="cv" id="r2_s2">—</div><div class="cu" id="r2_note">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 3 ══ -->
+<div class="tab-panel" id="tab-step3">
+  <div class="card">
+    <div class="card-head">
+      <span class="step-tag">STEP 3</span>
+      <div class="card-title">Fixed Appliances</div>
+      <div class="card-sub">Art. 220.82(B)(3) — Raw VA, no separate demand factor · GAS excludes load · voltage sets neutral</div>
+    </div>
+    <div class="card-body" style="padding:0;overflow:hidden;">
+      <div class="appl-wrap">
+        <table class="appl-tbl">
+          <thead><tr>
+            <th style="min-width:100px">Appliance</th>
+            <th style="width:38px;text-align:center">GAS</th>
+            <th style="width:42px;text-align:center">Qty</th>
+            <th style="min-width:140px">VA</th>
+            <th style="width:48px;text-align:center">Volt</th>
+            <th style="width:68px;text-align:right">Total VA</th>
+          </tr></thead>
+          <tbody id="appl_rows"></tbody>
+        </table>
+      </div>
+      <div style="padding:8px 14px;border-top:1px solid var(--border);"><button class="btn btn-add btn-sm" onclick="addExtraAppl()">+ Add Load</button></div>
+      <div style="display:flex;justify-content:flex-end;gap:16px;padding:10px 14px;background:var(--surface2);border-top:1px solid var(--border);flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text3);">Connected Total: <strong id="r3_tot">—</strong> VA</span>
+        <span style="font-size:12px;color:var(--blue);">Total = <strong id="r3_dem">—</strong> VA</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 4 ══ -->
+<div class="tab-panel" id="tab-step4">
+  <div class="card">
+    <div class="card-head">
+      <span class="step-tag">STEP 4</span>
+      <div class="card-title">Electric Clothes Dryers</div>
+      <div class="card-sub">Art. 220.82(B)(3) — 5,000 VA minimum or nameplate · Gas dryers excluded</div>
+    </div>
+    <div class="card-body">
+      <div id="dryer_list"></div>
+      <button class="btn btn-add btn-sm" onclick="addDryer()">+ Add Dryer</button>
+      <div class="chips" style="margin-top:12px;">
+        <div class="chip hl"><div class="cl">Step 4 Dryer Demand</div><div class="cv" id="r4_tot">—</div><div class="cu">VA</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 5 ══ -->
+<div class="tab-panel" id="tab-step5">
+  <div class="card">
+    <div class="card-head">
+      <span class="step-tag">STEP 5</span>
+      <div class="card-title">Electric Cooking Equipment</div>
+      <div class="card-sub">Art. 220.82(B)(3) — NEC Table 220.55 Col C · 5,000–12,500 W in 500 W steps · Gas excludes individual appliance</div>
+    </div>
+    <div class="card-body">
+      <label class="chk-row">
+        <input type="checkbox" id="gas_all" onchange="calc()">
+        <span>☑ ALL GAS Kitchen — zero out all cooking loads</span>
+      </label>
+      <div id="cook_cooktops"><div style="font-weight:600;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Cooktops</div></div>
+      <button class="btn btn-add btn-sm" style="margin-bottom:14px;" onclick="addCookItem('cooktop')">+ Add Cooktop</button>
+      <div id="cook_ovens"><div style="font-weight:600;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ovens / Ranges</div></div>
+      <button class="btn btn-add btn-sm" onclick="addCookItem('oven')">+ Add Oven / Range</button>
+      <div class="div"></div>
+      <div class="chips">
+        <div class="chip"><div class="cl">Raw Cooking Total</div><div class="cv" id="r5_raw">—</div><div class="cu">VA</div></div>
+        <div class="chip hl"><div class="cl">Step 5 Col C Demand</div><div class="cv" id="r5_dem">—</div><div class="cu">VA</div></div>
+      </div>
+      <div class="calc-show" style="margin-top:10px;">
+        <h4>Table 220.55 Col C Formula Applied</h4>
+        <div id="cook_calc_detail">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ POOL ══ -->
+<div class="tab-panel" id="tab-pool">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Pool Panel Feeder Calculation</div>
+      <div class="card-sub">NEC 680 · Largest continuous motor @ 125% (NEC 430.24) · Phase A &amp; B split · Pool VA included in Step 3</div>
+    </div>
+    <div class="card-body">
+      <div id="pool_rows"></div>
+      <div style="padding:10px 0 4px;"><button class="btn btn-add btn-sm" onclick="addPoolLoad()">+ Add Load</button></div>
+      <div class="chips" style="margin-top:10px;">
+        <div class="chip hl"><div class="cl">Phase A Amps</div><div class="cv" id="rp_phA">—</div><div class="cu">A</div></div>
+        <div class="chip hl"><div class="cl">Phase B Amps</div><div class="cv" id="rp_phB">—</div><div class="cu">A</div></div>
+        <div class="chip gr"><div class="cl">Min. Pool Feeder</div><div class="cv" id="rp_wire">—</div><div class="cu" id="rp_mat">Copper</div></div>
+        <div class="chip gr"><div class="cl">Min. Panel Rating</div><div class="cv" id="rp_panel">—</div><div class="cu">A</div></div>
+        <div class="chip am"><div class="cl">Pool EGC</div><div class="cv" id="rp_egc">—</div><div class="cu">NEC 250.122</div></div>
+      </div>
+      <div class="calc-show" style="margin-top:10px;">
+        <h4>Pool Panel Calculation</h4>
+        <div id="pool_calc_detail">—</div>
+      </div>
+      <div class="hnote" style="margin-top:10px;font-size:11px;">
+        <strong>Note:</strong> The Pool Equipment Panel sub-feeder VA (row in Step 3) is included in the main service demand. This tab sizes the <em>feeder to the pool sub-panel</em> separately per NEC 680.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HELP ══ -->
+<div class="tab-panel" id="tab-help">
+  <div class="card">
+    <div class="card-head"><div class="card-title">📖 How to Use This Calculator</div></div>
+    <div class="card-body">
+      <div class="help-sec">
+        <h3>Overview</h3>
+        <p>Performs a <strong>Residential Optional Load Calculation</strong> per <strong>NEC 2020, Art. 220.82</strong> for single-family dwellings. Complete Steps 1–5 in order, then view results on the <strong>Summary</strong> tab.</p>
+        <p>The Optional Method sums all loads, then applies a demand factor: first 10,000 VA @ 100%, remainder @ 40%.</p>
+      </div>
+      <div class="help-sec">
+        <h3><span class="hbadge">Step 1</span> General Lighting, Small Appliance &amp; Laundry</h3>
+        <p>Enter the finished floor area (sq ft). NEC requires 3 VA/sq ft, minimum 2 small appliance circuits (1,500 VA ea.) and 1 laundry circuit (1,500 VA). These floors cannot be reduced.</p>
+      </div>
+      <div class="help-sec">
+        <h3><span class="hbadge">Step 2</span> HVAC</h3>
+        <p>Select CU/HP tonnage and supplemental heat for each AHU. The NEC uses the <em>larger</em> of total electric heat (×65% for ≤4 units, ×40% for &gt;4) vs total A/C at 100%. Gas furnace = select "GAS + blower" so only the blower VA counts.</p>
+      </div>
+      <div class="help-sec">
+        <h3><span class="hbadge">Step 3</span> Fixed Appliances</h3>
+        <p>All permanently installed appliances. Rename, set qty, enter VA by selecting from the list or typing a custom value. Set voltage (120V or 240V) — this affects the neutral calculation. Gas checkbox removes the load. No separate demand factor (Optional Method). The Pool Equipment Panel row here represents the feeder VA going to the pool sub-panel.</p>
+      </div>
+      <div class="help-sec">
+        <h3><span class="hbadge">Step 4</span> Dryers</h3>
+        <p>Add as many dryers as needed. Check Gas to exclude any. Minimum 5,000 VA per unit per NEC. Type a custom VA if nameplate is larger.</p>
+      </div>
+      <div class="help-sec">
+        <h3><span class="hbadge">Step 5</span> Cooking</h3>
+        <p>Add cooktops and ovens/ranges individually. Each can be marked gas (excluded). Wattage selectable from 5,000–12,500 W in 500 W steps, or type a custom value. The "All Gas Kitchen" checkbox zeros all cooking at once. Combined raw wattage runs through <strong>NEC Table 220.55 Col C</strong> for the demand load.</p>
+      </div>
+      <div class="help-sec">
+        <h3>Pool Panel Tab</h3>
+        <p>Sizes the feeder from the main panel to the pool sub-panel. The largest continuous motor (pump or heater) is multiplied by 125% per NEC 430.24. 120V loads (lights) appear on Phase A only. All 240V loads split evenly. The pool sub-panel VA is also included in the main service demand via Step 3.</p>
+      </div>
+      <div class="help-sec">
+        <h3>Conductor Sizing</h3>
+        <p>Copper and Aluminum sizes are from <strong>NEC Table 310.16, 75°C column</strong> — the standard column used for most dwelling services. Aluminum is code-compliant and common for service entrance conductors. The EGC is sized per <strong>NEC Table 250.122</strong> based on the OCPD rating of the circuit it protects.</p>
+        <div class="hnote">Feeder sets reduce the per-conductor ampacity required — e.g., 2 sets of conductors each carry half the load.</div>
+      </div>
+      <div class="help-sec">
+        <h3>Generator</h3>
+        <p>The minimum generator kW equals the service demand VA ÷ 1,000. LP output and NG output differ per model — select the correct fuel source on the Summary tab.</p>
+      </div>
+      <div class="help-sec">
+        <h3>Neutral Demand</h3>
+        <p>Per NEC 220.61: First 200A at 100%, above 200A at 70%. This is the maximum unbalanced load between the two hot legs and neutral.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ══════════════════════════════════════════════════
+//  NEC TABLES (from NEC 310.16, 75°C column)
+// ══════════════════════════════════════════════════
+// Copper 75°C ampacity -> wire size (NEC 310.16)
+var CU75=[
+  [20,'12 AWG'],[30,'10 AWG'],[40,'8 AWG'],[55,'6 AWG'],[70,'4 AWG'],
+  [85,'3 AWG'],[95,'2 AWG'],[110,'1 AWG'],[130,'1/0 AWG'],[150,'2/0 AWG'],
+  [175,'3/0 AWG'],[200,'4/0 AWG'],[255,'250 kcmil'],[285,'300 kcmil'],
+  [310,'350 kcmil'],[335,'400 kcmil'],[380,'500 kcmil'],[420,'600 kcmil'],
+  [460,'700 kcmil'],[475,'750 kcmil'],[490,'800 kcmil'],[520,'900 kcmil'],[545,'1000 kcmil']
+];
+// Aluminum 75°C (NEC 310.16)
+var AL75=[
+  [20,'12 AWG'],[30,'10 AWG'],[40,'8 AWG'],[50,'6 AWG'],[65,'4 AWG'],
+  [75,'3 AWG'],[90,'2 AWG'],[100,'1 AWG'],[120,'1/0 AWG'],[135,'2/0 AWG'],
+  [155,'3/0 AWG'],[180,'4/0 AWG'],[205,'250 kcmil'],[230,'300 kcmil'],
+  [250,'350 kcmil'],[270,'400 kcmil'],[310,'500 kcmil'],[340,'600 kcmil'],
+  [375,'700 kcmil'],[385,'750 kcmil'],[395,'800 kcmil'],[425,'900 kcmil'],[445,'1000 kcmil']
+];
+// Service conductors per NEC 310.12 / Ampacity table rows D47-D57
+var SVC_CU=[[100,'4 AWG'],[110,'3 AWG'],[125,'2 AWG'],[150,'1 AWG'],[175,'1/0 AWG'],
+  [200,'2/0 AWG'],[225,'3/0 AWG'],[250,'4/0 AWG'],[300,'250 kcmil'],[350,'350 kcmil'],[400,'400 kcmil']];
+var SVC_AL=[[100,'2 AWG'],[110,'1 AWG'],[125,'1/0 AWG'],[150,'2/0 AWG'],[175,'3/0 AWG'],
+  [200,'4/0 AWG'],[225,'250 kcmil'],[250,'300 kcmil'],[300,'350 kcmil'],[350,'500 kcmil'],[400,'600 kcmil']];
+
+// EGC per NEC 250.122 (copper or aluminum)
+var EGC_CU=[[20,'12 AWG'],[60,'10 AWG'],[100,'8 AWG'],[200,'6 AWG'],[300,'4 AWG'],
+  [400,'3 AWG'],[500,'2 AWG'],[600,'1 AWG'],[800,'1/0 AWG'],[1000,'2/0 AWG'],
+  [1200,'3/0 AWG'],[1600,'4/0 AWG'],[2000,'250 kcmil'],[2500,'350 kcmil'],[3000,'400 kcmil']];
+var EGC_AL=[[20,'12 AWG'],[60,'8 AWG'],[100,'6 AWG'],[200,'4 AWG'],[300,'2 AWG'],
+  [400,'1 AWG'],[500,'1/0 AWG'],[600,'2/0 AWG'],[800,'3/0 AWG'],[1000,'4/0 AWG'],
+  [1200,'250 kcmil'],[1600,'350 kcmil'],[2000,'400 kcmil'],[2500,'600 kcmil']];
+
+function wireSize(a,tbl){for(var i=0;i<tbl.length;i++)if(a<=tbl[i][0])return tbl[i][1];return tbl[tbl.length-1][1];}
+function svcWire(a,isAl){return wireSize(a,isAl?SVC_AL:SVC_CU);}
+function egcWire(ocpd,isAl){return wireSize(ocpd,isAl?EGC_AL:EGC_CU);}
+function poolWire(a,isAl){return wireSize(a,isAl?AL75:CU75);}
+function minSvc(a){var s=[100,110,125,150,175,200,225,250,300,350,400,450,500,600,700,800];for(var i=0;i<s.length;i++)if(a<=s[i])return s[i];return 800;}
+
+// NEC Table 220.55 Col C cooking demand
+function cookDem(r){
+  if(!r||r<=0) return 0;
+  if(r<=1749)  return r;
+  if(r<=3499)  return r*0.8;
+  if(r<=8749)  return 8000;
+  if(r<=12499) return 8000+(r-8750)*0.2;
+  if(r<=17499) return 11000+(r-12500)*0.3;
+  if(r<=20499) return 14000+(r-17500)*0.333;
+  if(r<=24499) return 17000+(r-20500)*0.25;
+  if(r<=29999) return 19000+(r-24500)*0.222;
+  return 25000;
+}
+function cookNote(r){
+  if(!r||r<=0) return 'No electric cooking';
+  if(r<=3499)  return r<=1749?'< 1,750 W: 100%':'1,750–3,499 W: 80%';
+  if(r<=8749)  return '3,500–8,749 W: flat 8,000 VA';
+  if(r<=12499) return '8,750–12,499 W: 8,000 + 20% of excess over 8,750';
+  if(r<=17499) return '12,500–17,499 W: 11,000 + 30% of excess over 12,500';
+  if(r<=20499) return '17,500–20,499 W: 14,000 + 33% of excess over 17,500';
+  if(r<=24499) return '20,500–24,499 W: 17,000 + 25% of excess over 20,500';
+  if(r<=29999) return '24,500–29,999 W: 19,000 + 22% of excess over 24,500';
+  return '≥ 30,000 W: flat 25,000 VA';
+}
+
+// ── Generators ──
+var GENS=[['AC 10KW',10,9],['AC 12KW',12,12],['AC 14KW',14,14],['AC 16KW',16,16],
+  ['AC 18KW',18,17],['AC 20KW',20,18],['AC 22KW',22,21],['AC 24KW',24,22.5],
+  ['AC 26KW',26,24],['LQ 27KW',27,25],['AC 28KW',28,25],['LQ 32KW',32,32],
+  ['LQ 38KW',38,38],['LQ 40KW',40,40],['LQ 48KW',48,48],['LQ 60KW',60,60],
+  ['LQ 80KW',75,80],['LQ 100KW',96,96],['LQ 130KW',130,130],['LQ 150KW',134,144]];
+
+// ── NEC HP motor VA (NEC 430.248 / 430.250 single-phase / three-phase FLA×240V) ──
+// Single-phase 240V: HP -> FLA (NEC Table 430.248) -> VA = FLA×240
+var HP_VA_120 ={'1/6':4.4,'1/4':5.8,'1/3':7.2,'1/2':9.8,'3/4':13.8,'1':16,'1.5':20,'2':24,'3':34,'5':56,'7.5':80,'10':100};
+var HP_VA_240 ={'1/6':2.2,'1/4':2.9,'1/3':3.6,'1/2':4.9,'3/4':6.9,'1':8,'1.5':10,'2':12,'3':17,'5':28,'7.5':40,'10':50};
+// VA = FLA × voltage
+function hpVA(hp,v){var f=v===120?HP_VA_120[hp]:HP_VA_240[hp];return f?f*v:0;}
+
+// ── Helpers ──
+function gv(id){var e=document.getElementById(id);if(!e)return 0;var v=parseFloat(e.value);return isNaN(v)?0:v;}
+function gc(id){var e=document.getElementById(id);return e&&e.checked;}
+function gs(id){var e=document.getElementById(id);return e?e.value:'';}
+function sv(id,v){var e=document.getElementById(id);if(!e)return;e.textContent=(typeof v==='number')?fmt(v):v;}
+function fmt(n,dec){if(dec)return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});return Math.round(n).toLocaleString('en-US');}
+
+// ══ STATIC DATA ══
+var CU_OPTS=[[0,'— none —'],[1840,'1 ton (1,840)'],[2200,'1.5 ton (2,200)'],[2850,'2 ton (2,850)'],
+  [3600,'2.5 ton (3,600)'],[4275,'3 ton (4,275)'],[5000,'3.5 ton (5,000)'],[5700,'4 ton (5,700)'],
+  [7130,'5 ton (7,130)'],[1295,'Mini Split DP20'],[1887,'Mini Split DP25'],[2047,'Mini Split DP30']];
+var SH_OPTS=[[0,'— GAS / none —'],[5800,'5kW+800=5,800'],[8300,'7.5kW+800=8,300'],
+  [8800,'8kW+800=8,800'],[10800,'9.6kW+1,200=10,800'],[11600,'10kW+1,600=11,600'],
+  [14100,'12.5kW+1,600=14,100'],[16600,'15kW+1,600=16,600'],[20400,'18kW+2,400=20,400'],
+  [23400,'21kW+2,400=23,400'],[25400,'23kW+2,400=25,400'],[28600,'25kW+3,600=28,600'],
+  [32600,'29kW+3,600=32,600'],[1200,'GAS+1,200 blwr'],[1800,'0.5kW+1,800 blwr']];
+
+// HP motor options for appliances (single-phase, selectable voltage)
+var MOTOR_OPTS=[
+  {label:'— custom VA —', hp:'custom'},
+  {label:'1/6 HP',hp:'1/6'},{label:'1/4 HP',hp:'1/4'},{label:'1/3 HP',hp:'1/3'},
+  {label:'1/2 HP',hp:'1/2'},{label:'3/4 HP',hp:'3/4'},{label:'1 HP',hp:'1'},
+  {label:'1.5 HP',hp:'1.5'},{label:'2 HP',hp:'2'},{label:'3 HP',hp:'3'},
+  {label:'5 HP',hp:'5'},{label:'7.5 HP',hp:'7.5'},{label:'10 HP',hp:'10'}
+];
+
+var APPLS=[
+  {id:'wh',   name:'Water Heater',       qty:1, va:4500,  volt:'240', canGas:true,  isMotor:false, vaOpts:[4500,3500,6000,9000,18000,28000,0]},
+  {id:'ref',  name:'Refrigerator',       qty:1, va:1500,  volt:'120', canGas:false, isMotor:false, vaOpts:[1500,1400,1600,1700,1800]},
+  {id:'frz',  name:'Freezer',            qty:1, va:600,   volt:'120', canGas:false, isMotor:false, vaOpts:[600,700,800,900,1000]},
+  {id:'dw',   name:'Dishwasher',         qty:1, va:1030,  volt:'120', canGas:false, isMotor:false, vaOpts:[1030,1100,1200,1300,1400]},
+  {id:'disp', name:'Disposal',           qty:1, va:828,   volt:'120', canGas:false, isMotor:true,  vaOpts:[]},
+  {id:'rh',   name:'Range Hood',         qty:1, va:540,   volt:'120', canGas:true,  isMotor:false, vaOpts:[540,400,700,1200]},
+  {id:'mw',   name:'Microwave',          qty:1, va:1400,  volt:'120', canGas:false, isMotor:false, vaOpts:[1400,1000,1100,1200,1300,1500,1700]},
+  {id:'ice',  name:'Ice Maker',          qty:0, va:1440,  volt:'120', canGas:false, isMotor:false, vaOpts:[1440,1600,1800,900]},
+  {id:'mini', name:'Mini Fridge',        qty:0, va:340,   volt:'120', canGas:false, isMotor:false, vaOpts:[340,170,230,288]},
+  {id:'comp', name:'Compactor',          qty:0, va:850,   volt:'120', canGas:false, isMotor:false, vaOpts:[850,400,780]},
+  {id:'car',  name:'Car Charger (L2)',   qty:0, va:7200,  volt:'240', canGas:false, isMotor:false, vaOpts:[7200,7500,10000]},
+  {id:'wine', name:'Wine Cooler',        qty:0, va:1500,  volt:'120', canGas:false, isMotor:false, vaOpts:[1500,1800,2400]},
+  {id:'jac',  name:'Jacuzzi Tub',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,2880,4800,7200]},
+  {id:'shut', name:'Shutters (120V)',    qty:1, va:828,   volt:'120', canGas:false, isMotor:false, vaOpts:[828]},
+  {id:'well', name:'Well Pump',          qty:0, va:0,     volt:'240', canGas:false, isMotor:true,  vaOpts:[]},
+  {id:'fpump',name:'Fountain Pump',      qty:0, va:0,     volt:'120', canGas:false, isMotor:true,  vaOpts:[]},
+  {id:'elev', name:'Elevator',          qty:0, va:0,     volt:'240', canGas:false, isMotor:true,  vaOpts:[]},
+  // Pool Equip Panel row is generated automatically from Pool tab — not in APPLS array
+  {id:'sp1',  name:'Spare 240V',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,1500,2000,3000,5000]},
+  {id:'sp2',  name:'Spare 240V',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,1500,2000,3000,5000]},
+];
+
+var POOL_ROWS=[
+  {id:'pm',    label:'Pool Pump (continuous)', isMotor:true, volt:'240', def_va:0},
+  {id:'pnc',   label:'Non-continuous Load',    isMotor:false,volt:'240', def_va:0},
+  {id:'spa',   label:'Spa Heater 11 kVA',      isMotor:false,volt:'240', def_va:0, qty:true, def_qty:0},
+  {id:'ph35',  label:'Pool Heater 3.5 ton HP', isMotor:true, volt:'240', def_va:6250, qty:true, def_qty:0},
+  {id:'ph5',   label:'Pool Heater 5 ton HP',   isMotor:true, volt:'240', def_va:10125,qty:true, def_qty:0},
+  {id:'plight',label:'Pool Light (120V ea.)',  isMotor:false,volt:'120', def_va:300,  qty:true, def_qty:0},
+  {id:'blower',label:'Blower Motor',           isMotor:true, volt:'240', def_va:0},
+  // Additional loads added dynamically via addPoolLoad()
+];
+var poolExtraCount = 0;
+
+// ══ BUILD UI ══
+function buildAHU(){
+  var h='';
+  for(var i=0;i<5;i++){
+    var cu='',sh='';
+    for(var j=0;j<CU_OPTS.length;j++){
+      var s=(i===0&&CU_OPTS[j][0]===4275)||(i!==0&&CU_OPTS[j][0]===0)?' selected':'';
+      cu+='<option value="'+CU_OPTS[j][0]+'"'+s+'>'+CU_OPTS[j][1]+'</option>';
+    }
+    for(var j=0;j<SH_OPTS.length;j++){
+      var s=(i===0&&SH_OPTS[j][0]===8800)||(i!==0&&SH_OPTS[j][0]===0)?' selected':'';
+      sh+='<option value="'+SH_OPTS[j][0]+'"'+s+'>'+SH_OPTS[j][1]+'</option>';
+    }
+    h+='<div class="ahu-row"><span class="ahu-lbl">AHU '+(i+1)+'</span>'
+      +'<select id="cu'+(i+1)+'" onchange="calc()" style="background:#EEF2FF">'+cu+'</select>'
+      +'<select id="sh'+(i+1)+'" onchange="calc()" style="background:#FDF4FF">'+sh+'</select>'
+      +'</div>';
+  }
+  document.getElementById('ahu_rows').innerHTML=h;
+}
+
+function makeVAcell(id, a, customId){
+  // combo: select from list OR type custom
+  var sel='<select id="'+id+'" onchange="vaSelChange(\''+id+'\',\''+customId+'\')" style="font-size:12px;">';
+  if(a.isMotor){
+    for(var i=0;i<MOTOR_OPTS.length;i++){
+      var mo=MOTOR_OPTS[i];
+      var va240=mo.hp==='custom'?0:hpVA(mo.hp,240);
+      var lbl=mo.hp==='custom'?'— type VA below —':mo.label+' ('+Math.round(va240)+' VA @240V)';
+      var s=(mo.hp!=='custom'&&Math.round(va240)===a.va)?' selected':'';
+      if(mo.hp==='custom') s=a.va===0?' selected':'';
+      sel+='<option value="'+(mo.hp==='custom'?'custom':va240)+'"'+s+'>'+lbl+'</option>';
+    }
+  } else {
+    sel+='<option value="custom">— type custom VA —</option>';
+    for(var j=0;j<a.vaOpts.length;j++){
+      var s=a.vaOpts[j]===a.va?' selected':'';
+      var lbl=a.vaOpts[j]===0?'0 — Gas/None':a.vaOpts[j].toLocaleString()+' VA';
+      sel+='<option value="'+a.vaOpts[j]+'"'+s+'>'+lbl+'</option>';
+    }
+  }
+  sel+='</select>';
+  sel+='<input type="number" id="'+customId+'" value="'+a.va+'" min="0" oninput="calc()" style="margin-top:2px;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-family:\'JetBrains Mono\',monospace;font-size:10px;text-align:right;width:100%;">';
+  return sel;
+}
+
+function vaSelChange(selId, custId){
+  var v=document.getElementById(selId).value;
+  if(v!=='custom'){
+    document.getElementById(custId).value=v;
+  }
+  calc();
+}
+
+var extraApplCount=0;
+function buildAppl(){
+  var h='';
+  for(var i=0;i<APPLS.length;i++){
+    var a=APPLS[i];
+    var gasCell=a.canGas
+      ?'<label class="gas-cell" style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;"><input type="checkbox" id="gas_'+a.id+'" onchange="calc()" style="accent-color:var(--amber);width:13px;height:13px;">GAS</label>'
+      :'<span style="color:var(--border2);">—</span>';
+    var voltCell='<select class="volt-cell" id="volt_'+a.id+'" onchange="calc()" style="font-size:10px;padding:4px 3px;">'
+      +'<option value="120"'+(a.volt==="120"?" selected":"")+'>120V</option>'
+      +'<option value="240"'+(a.volt==="240"?" selected":"")+'>240V</option>'
+      +'</select>';
+    var vaCell=makeVAcell("sel_"+a.id, a, "va_"+a.id);
+    h+="<tr>"
+      +"<td><input type='text' id='name_"+a.id+"' value='"+a.name+"' style='font-size:12px;min-width:90px;'></td>"
+      +"<td class='gas-cell' style='text-align:center;'>"+gasCell+"</td>"
+      +"<td><input type='number' id='qty_"+a.id+"' value='"+a.qty+"' min='0' oninput='calc()' style='text-align:center;width:45px;'></td>"
+      +"<td>"+vaCell+"</td>"
+      +"<td class='volt-cell'>"+voltCell+"</td>"
+      +"<td class='tot-cell' id='tot_"+a.id+"'>—</td>"
+      +"</tr>";
+  }
+  // Pool panel — read-only, auto-filled from Pool tab
+  h+='<tr id="row_pool_panel" style="background:var(--blue-lt);">'
+    +'<td><span style="font-size:12px;font-weight:600;color:var(--blue);">Pool Equip. Panel</span><br><span style="font-size:10px;color:var(--text3);">← from Pool tab</span></td>'
+    +'<td style="text-align:center;">—</td>'
+    +'<td style="text-align:center;font-size:12px;">1</td>'
+    +'<td style="font-size:11px;color:var(--blue);font-style:italic;">Auto-calculated</td>'
+    +'<td style="text-align:center;font-size:10px;color:var(--blue);">240V</td>'
+    +'<td class="tot-cell" id="tot_pool_panel" style="color:var(--blue);">—</td>'
+    +'</tr>';
+  document.getElementById("appl_rows").innerHTML=h;
+}
+
+function addExtraAppl(){
+  var n=++extraApplCount;
+  var tbody=document.getElementById("appl_rows");
+  var tr=document.createElement("tr");
+  tr.id="xrow_"+n;
+  tr.innerHTML="<td><input type='text' id='xname_"+n+"' value='Extra Load "+n+"' style='font-size:12px;'></td>"
+    +"<td style='text-align:center;'><label style='display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;'><input type='checkbox' id='xgas_"+n+"' onchange='calc()' style='accent-color:var(--amber);width:13px;height:13px;'>GAS</label></td>"
+    +"<td><input type='number' id='xqty_"+n+"' value='1' min='0' oninput='calc()' style='text-align:center;width:45px;'></td>"
+    +"<td><input type='number' id='xva_"+n+"' value='0' min='0' oninput='calc()' style='width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;'></td>"
+    +"<td><select id='xvolt_"+n+"' onchange='calc()' style='font-size:10px;padding:4px 3px;border:1px solid var(--border);border-radius:4px;width:100%;'><option value='120'>120V</option><option value='240' selected>240V</option></select></td>"
+    +"<td class='tot-cell' id='xtot_"+n+"'>0</td>"
+    +"<td><button class='btn btn-remove' onclick='removeExtraAppl("+n+")' style='padding:2px 6px;font-size:11px;'>✕</button></td>";
+  tbody.appendChild(tr);
+  calc();
+}
+function removeExtraAppl(n){var r=document.getElementById("xrow_"+n);if(r)r.remove();calc();}
+
+// ── Dryers ──
+var dryerCount=0;
+function addDryer(isGas, va, qty){
+  var n=++dryerCount;
+  var d=document.getElementById('dryer_list');
+  var div=document.createElement('div');
+  div.className='dryer-item';
+  div.id='dryer_'+n;
+  div.innerHTML='<div class="dryer-head">'
+    +'<span style="font-weight:700;font-size:13px;">Dryer '+n+'</span>'
+    +'<button class="btn btn-remove" onclick="removeDryer('+n+')">Remove</button>'
+    +'</div>'
+    +'<label class="chk-row" style="margin-bottom:8px;">'
+    +'<input type="checkbox" id="gas_dry'+n+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas Dryer — exclude from electric load</span></label>'
+    +'<div class="fg fg-2">'
+    +'<div class="field"><label>Quantity</label><input type="number" id="qty_dry'+n+'" value="'+(qty||1)+'" min="0" oninput="calc()"></div>'
+    +'<div class="field"><label>VA (type or select)</label>'
+    +'<select id="sel_dry'+n+'" onchange="drySelChange('+n+')" style="margin-bottom:3px;">'
+    +'<option value="5000"'+((!va||va===5000)?' selected':'')+'>5,000 VA (standard)</option>'
+    +'<option value="5600"'+(va===5600?' selected':'')+'>5,600 VA</option>'
+    +'<option value="6000"'+(va===6000?' selected':'')+'>6,000 VA</option>'
+    +'<option value="7200"'+(va===7200?' selected':'')+'>7,200 VA</option>'
+    +'<option value="custom">— type custom —</option>'
+    +'</select>'
+    +'<input type="number" id="va_dry'+n+'" value="'+(va||5000)+'" min="5000" oninput="calc()" style="font-family:\'JetBrains Mono\',monospace;text-align:right;">'
+    +'</div></div>';
+  d.appendChild(div);
+  calc();
+}
+function drySelChange(n){
+  var v=document.getElementById('sel_dry'+n).value;
+  if(v!=='custom') document.getElementById('va_dry'+n).value=v;
+  calc();
+}
+function removeDryer(n){var e=document.getElementById('dryer_'+n);if(e)e.remove();calc();}
+
+// ── Cooking ──
+var ctCount=0, ovCount=0;
+function addCookItem(type, isGas, va){
+  var n=(type==='cooktop')?++ctCount:++ovCount;
+  var cid=type+'_'+n;
+  var container=document.getElementById(type==='cooktop'?'cook_cooktops':'cook_ovens');
+  var div=document.createElement('div');
+  div.className='cook-item';
+  div.id='ci_'+cid;
+  var label=(type==='cooktop'?'Cooktop':'Oven / Range')+' '+n;
+  // Build wattage select 5000-12500 in 500 steps + 0 + custom
+  var opts='<option value="0"'+(va===0?' selected':'')+'>0 — Gas / Not installed</option>';
+  for(var w=5000;w<=12500;w+=500){
+    var s=(va===w)?' selected':'';
+    opts+='<option value="'+w+'"'+s+'>'+(w/1000).toFixed(1)+' kW ('+w.toLocaleString()+' VA)</option>';
+  }
+  opts+='<option value="custom">— type custom —</option>';
+  div.innerHTML='<div class="cook-item-head">'
+    +'<span class="cook-item-title">'+label+'</span>'
+    +'<button class="btn btn-remove" onclick="removeCook(\''+cid+'\')">Remove</button>'
+    +'</div>'
+    +'<div class="cook-fields">'
+    +'<label class="chk-row" style="margin-bottom:0;">'
+    +'<input type="checkbox" id="gas_'+cid+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas</span></label>'
+    +'<div class="field">'
+    +'<label>Wattage</label>'
+    +'<select id="sel_'+cid+'" onchange="cookSelChange(\''+cid+'\')" style="margin-bottom:3px;">'+opts+'</select>'
+    +'<input type="number" id="va_'+cid+'" value="'+(va!==undefined && va!==null && va!==false ? va : 0)+'" min="0" oninput="calc()" style="font-family:\'JetBrains Mono\',monospace;text-align:right;">'
+    +'</div></div>';
+  container.appendChild(div);
+  calc();
+}
+function cookSelChange(cid){
+  var v=document.getElementById('sel_'+cid).value;
+  if(v!=='custom'){
+    document.getElementById('va_'+cid).value=(v==='0'?0:v);
+  }
+  calc();
+}
+function removeCook(cid){var e=document.getElementById('ci_'+cid);if(e)e.remove();calc();}
+
+// ── Pool ──
+function buildPool(){
+  var h='';
+  for(var i=0;i<POOL_ROWS.length;i++){
+    var r=POOL_ROWS[i];
+    var inp;
+    var voltSel='<select id="pvolt_'+r.id+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;">'
+      +'<option value="120"'+(r.volt==="120"?" selected":"")+'>120V</option>'
+      +'<option value="240"'+(r.volt==="240"?" selected":"")+'>240V</option>'
+      +'</select>';
+    if(r.qty){
+      var qtySel='<select id="qty_'+r.id+'" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
+        +'<option value="0"'+(r.def_qty===0?" selected":"")+'>0</option>'
+        +'<option value="1"'+(r.def_qty===1?" selected":"")+'>1</option>'
+        +'<option value="2">2</option><option value="3">3</option></select>';
+      if(r.isMotor){
+        inp=qtySel+'<span style="margin:0 3px;font-size:11px;color:var(--text3);">×</span>'+buildMotorSel("va_"+r.id, r.def_va, r.volt);
+      } else {
+        inp=qtySel+'<span style="margin:0 3px;font-size:11px;color:var(--text3);">×</span>'
+          +'<input type="number" id="va_'+r.id+'" value="'+r.def_va+'" min="0" oninput="calc()" style="width:90px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;">';
+      }
+    } else if(r.isMotor){
+      inp=buildMotorSel("va_"+r.id, r.def_va, r.volt);
+    } else {
+      inp='<input type="number" id="va_'+r.id+'" value="'+r.def_va+'" min="0" oninput="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;width:100%;">';
+    }
+    h+='<div class="pool-row">'
+      +'<span class="pool-lbl">'+r.label+' <span style="margin-left:4px;">'+voltSel+'</span></span>'
+      +'<div class="pool-inp" style="display:flex;align-items:center;gap:4px;">'+inp+'</div>'
+      +'</div>';
+  }
+  h+='<div id="pool_extra_rows"></div>';
+  document.getElementById("pool_rows").innerHTML=h;
+}
+
+function addPoolLoad(){
+  var n=++poolExtraCount;
+  var div=document.createElement("div");
+  div.className="pool-row";
+  div.id="pxrow_"+n;
+  div.innerHTML='<span class="pool-lbl">'
+    +'<input type="text" id="pxname_'+n+'" value="Extra Load '+n+'" style="border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;width:120px;">'
+    +' <select id="pxvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;">'
+    +'<option value="120">120V</option><option value="240" selected>240V</option></select>'
+    +'</span>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:4px;">'
+    +'<input type="number" id="pxva_'+n+'" value="0" min="0" oninput="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;width:100px;">'
+    +'<button class="btn btn-remove" onclick="removePoolLoad('+n+')">✕</button>'
+    +'</div>';
+  document.getElementById("pool_extra_rows").appendChild(div);
+  calc();
+}
+function removePoolLoad(n){var e=document.getElementById("pxrow_"+n);if(e)e.remove();calc();}
+
+
+function buildMotorSel(id, defVA, volt){
+  var s='<select id="'+id+'" onchange="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:5px 6px;font-size:11px;background:#fff;width:100%;">';
+  s+='<option value="0">— none —</option>';
+  for(var i=1;i<MOTOR_OPTS.length;i++){
+    var mo=MOTOR_OPTS[i];
+    var va=hpVA(mo.hp, parseInt(volt)||240);
+    var rounded=Math.round(va);
+    var sel=rounded===defVA?' selected':'';
+    s+='<option value="'+rounded+'"'+sel+'>'+mo.label+' ('+rounded+' VA @'+volt+'V)</option>';
+  }
+  s+='</select>';
+  return s;
+}
+
+// ══ MAIN CALC ══
+function calc(){
+  var isAl=gs('conductor')==='al';
+  var sets=parseInt(gs('sets'))||1;
+  var wireTbl=isAl?AL75:CU75;
+
+  // ── Step 1 ──
+  var sqft=gv('sqft'),gl=sqft*3,sa=gv('smapp')*1500,lc=gv('laundry')*1500,s1=gl+sa+lc;
+  sv('r1_gl',gl);sv('r1_sa',sa);sv('r1_lc',lc);sv('r1_tot',s1);
+
+  // ── Step 2 ──
+  var totCool=0,totHeat=0,nUnits=0;
+  for(var i=1;i<=5;i++){
+    var cu=gv('cu'+i),sh=gv('sh'+i);
+    if(cu>0||sh>0) nUnits++;
+    totCool+=cu; totHeat+=sh;
+  }
+  var hf=nUnits>4?0.40:0.65;
+  var heatDem=totHeat*hf, s2=Math.max(heatDem,totCool);
+  sv('r2_heat',totHeat);sv('r2_cool',totCool);
+  sv('r2_hf',(hf*100).toFixed(0)+'%');
+  sv('r2_s2',Math.round(s2));
+  document.getElementById('r2_note').textContent=totCool>=heatDem?'A/C @ 100%':'Heat @ '+(hf*100)+'%';
+
+  // ── Pool panel total VA (from pool tab) ──
+  var pmVA_=gv('va_pm'), pncVA_=gv('va_pnc');
+  var spaQty_=gv('qty_spa'), h35Qty_=gv('qty_ph35'), h5Qty_=gv('qty_ph5');
+  var spaVA_=spaQty_*11000;
+  var h35VA_=h35Qty_*gv('va_ph35');
+  var h5VA_=h5Qty_*gv('va_ph5');
+  var heaterVA_=h35VA_+h5VA_+spaVA_;
+  var blowerVA_=gv('va_blower');
+  var lightVA_=gv('qty_plight')*300;
+  // Pool extra loads
+  for(var n=1;n<=poolExtraCount;n++){
+    if(!document.getElementById('pxrow_'+n)) continue;
+    pncVA_+=gv('pxva_'+n);
+  }
+  // Total pool sub-panel feeder VA = sum of all pool loads
+  // Per NEC, the feeder must carry the total demand of the sub-panel
+  // We use the larger of Phase A or B × 240 as the feeder VA
+  var contArr_=[pmVA_,heaterVA_].filter(function(x){return x>0;});
+  var largest_=contArr_.length?Math.max.apply(null,contArr_):0;
+  var restCont_=contArr_.reduce(function(a,b){return a+b;},0)-largest_;
+  var contAdj_=largest_*1.25+restCont_;
+  var phI_=contAdj_/2+blowerVA_/2+lightVA_+pncVA_/2;
+  var phJ_=contAdj_/2+blowerVA_/2+pncVA_/2;
+  var poolPhA_=phI_/120, poolPhB_=phJ_/120;
+  var poolFdrVA=Math.max(poolPhA_,poolPhB_)*240;  // feeder VA for Step 3
+  var tc_pool=document.getElementById('tot_pool_panel');
+  if(tc_pool) tc_pool.textContent=fmt(Math.round(poolFdrVA));
+
+  // ── Step 3 ──
+  var totApp=poolFdrVA, totNeut120=0;  // pool panel already included
+  for(var i=0;i<APPLS.length;i++){
+    var a=APPLS[i];
+    var isGas=a.canGas&&gc('gas_'+a.id);
+    var va=isGas?0:gv('va_'+a.id);
+    var qty=gv('qty_'+a.id);
+    var volt=parseInt(gs('volt_'+a.id))||240;
+    var rowTot=isGas?0:qty*va;
+    totApp+=rowTot;
+    if(volt===120&&!isGas) totNeut120+=rowTot;
+    var tc=document.getElementById('tot_'+a.id);
+    if(tc) tc.textContent=isGas?'GAS':fmt(rowTot);
+  }
+  // Extra appliance loads
+  for(var n=1;n<=extraApplCount;n++){
+    if(!document.getElementById('xrow_'+n)) continue;
+    var xGas=gc('xgas_'+n);
+    var xVa=xGas?0:gv('xva_'+n);
+    var xQty=gv('xqty_'+n);
+    var xVolt=parseInt(gs('xvolt_'+n))||240;
+    var xTot=xGas?0:xQty*xVa;
+    totApp+=xTot;
+    if(xVolt===120&&!xGas) totNeut120+=xTot;
+    var xtc=document.getElementById('xtot_'+n);
+    if(xtc) xtc.textContent=xGas?'GAS':fmt(xTot);
+  }
+  var appDem=totApp;  // Optional Method: NO separate demand factor — included in 10k/40% pool
+  sv('r3_tot',totApp);sv('r3_dem',Math.round(appDem));
+
+  // ── Step 4 ──
+  var s4=0;
+  for(var n=1;n<=dryerCount;n++){
+    if(!document.getElementById('dryer_'+n)) continue;
+    if(!gc('gas_dry'+n)) s4+=gv('qty_dry'+n)*gv('va_dry'+n);
+  }
+  sv('r4_tot',s4);
+
+  // ── Step 5 ──
+  var allGas=gc('gas_all'), rawCook=0;
+  for(var n=1;n<=ctCount;n++){
+    if(!document.getElementById('ci_cooktop_'+n)) continue;
+    if(!allGas&&!gc('gas_cooktop_'+n)) rawCook+=gv('va_cooktop_'+n);
+  }
+  for(var n=1;n<=ovCount;n++){
+    if(!document.getElementById('ci_oven_'+n)) continue;
+    if(!allGas&&!gc('gas_oven_'+n)) rawCook+=gv('va_oven_'+n);
+  }
+  var s5=cookDem(rawCook);
+  sv('r5_raw',rawCook);sv('r5_dem',Math.round(s5));
+  var cookNote_str=cookNote(rawCook);
+  var ccd=document.getElementById('cook_calc_detail');
+  if(ccd) ccd.innerHTML='<div class="calc-line"><span>Raw cooking total</span><span class="cv">'+fmt(rawCook)+' VA</span></div>'
+    +'<div class="calc-line"><span>Col C rule applied</span><span class="cv">'+cookNote_str+'</span></div>'
+    +'<div class="calc-line"><span><strong>Step 5 demand</strong></span><span class="cv"><strong>'+fmt(Math.round(s5))+' VA</strong></span></div>';
+
+  // ── NEC 220.82 Optional Method ──
+  // Base pool = Step1 + Step3 (raw appliance VA) + Step4 (dryer) + Step5 (cooking)
+  // NO separate 75% factor on appliances — all go into 10k/40% pool together
+  // Then ADD Step2 (HVAC) at 100% AFTER demand factor — NEC 220.82(C)
+  var baseLoads=s1+appDem+s4+s5;  // appDem is already raw totApp (no 75%)
+  var baseDem=baseLoads<=10000?baseLoads:10000+(baseLoads-10000)*0.40;
+  var svcDem=baseDem+s2;  // HVAC added at 100% after demand factor
+  var allLoads=s1+s2+appDem+s4+s5; // total connected for display
+  var amps=svcDem/240;
+  // Neutral per NEC 220.61: first 200A @ 100%, above 200A @ 70%
+  var neutral_amps=amps<=200?amps:200+(amps-200)*0.70;
+  var svcSize=minSvc(amps);
+  var amps_per=amps/sets;
+  var neut_per=neutral_amps/sets;
+  var feederWire=svcWire(amps_per,isAl);
+  var neutralWire=svcWire(neut_per,isAl);
+  var egc=egcWire(svcSize,isAl);
+
+  // Generator
+  var fuel=gs('fuel'), kw=svcDem/1000, gen='> 150KW';
+  for(var gi=0;gi<GENS.length;gi++){
+    var out=fuel==='propane'?GENS[gi][1]:GENS[gi][2];
+    if(out>=kw){gen=GENS[gi][0];break;}
+  }
+
+  // ── Update Summary ──
+  sv('s_gen',gen);
+  document.getElementById('s_fuel').textContent=fuel==='propane'?'Propane LP':'Natural Gas';
+  sv('s_dem',Math.round(svcDem));
+  sv('s_amps',amps.toFixed(1));
+  sv('s_svc',svcSize);
+  sv('s_neut',neutral_amps.toFixed(1));
+  sv('s_feed',feederWire+(sets>1?' ×'+sets:''));
+  document.getElementById('s_mat').textContent=isAl?'Aluminum 75°C':'Copper 75°C';
+  sv('s_nwire',neutralWire);
+  sv('s_egc',egc);
+  sv('br1',fmt(s1)+' VA');
+  sv('br2',fmt(Math.round(s2))+' VA  ← added @ 100% after demand factor');
+  sv('br3',fmt(Math.round(appDem))+' VA');sv('br4',fmt(s4)+' VA');
+  sv('br5',fmt(Math.round(s5))+' VA');
+  sv('br_tot',fmt(Math.round(allLoads))+' VA');sv('br_dem',fmt(Math.round(svcDem))+' VA');
+
+  // Calc detail — show exact NEC 220.82 steps
+  var d10=Math.min(baseLoads,10000), dRest=Math.max(0,baseLoads-10000);
+  var cd=document.getElementById('calc_detail');
+  if(cd) cd.innerHTML=
+    '<div class="calc-line"><span>Step 1 — Lighting/Sm.Appl/Laundry</span><span class="cv">'+fmt(s1)+' VA</span></div>'
+    +'<div class="calc-line"><span>Step 3 — Appliances (raw VA, no demand factor)</span><span class="cv">'+fmt(Math.round(appDem))+' VA</span></div>'
+    +'<div class="calc-line"><span>Step 4 — Dryer</span><span class="cv">'+fmt(s4)+' VA</span></div>'
+    +'<div class="calc-line"><span>Step 5 — Cooking (Col C)</span><span class="cv">'+fmt(Math.round(s5))+' VA</span></div>'
+    +'<div class="calc-line"><span>─── Base pool (Steps 1+3+4+5, raw VA)</span><span class="cv">'+fmt(Math.round(baseLoads))+' VA</span></div>'
+    +'<div class="calc-line"><span>First 10,000 VA × 100%</span><span class="cv">'+fmt(d10)+' VA</span></div>'
+    +(dRest>0?'<div class="calc-line"><span>Remaining '+fmt(Math.round(dRest))+' VA × 40%</span><span class="cv">'+fmt(Math.round(dRest*0.4))+' VA</span></div>':'')
+    +'<div class="calc-line"><span>Base demand subtotal</span><span class="cv">'+fmt(Math.round(baseDem))+' VA</span></div>'
+    +'<div class="calc-line"><span>Step 2 — HVAC added @ 100% (after demand factor)</span><span class="cv">+ '+fmt(Math.round(s2))+' VA</span></div>'
+    +'<div class="calc-line" style="background:var(--blue-lt);padding:6px;border-radius:4px;"><span><strong>Service demand (NEC 220.82)</strong></span><span class="cv"><strong>'+fmt(Math.round(svcDem))+' VA</strong></span></div>'
+    +'<div class="calc-line"><span>÷ 240V = demand amps</span><span class="cv">'+amps.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Min. service size (NEC 230.42)</span><span class="cv">'+svcSize+' A</span></div>'
+    +'<div class="calc-line"><span>Neutral (NEC 220.61): ≤200A@100%, >200A@70%</span><span class="cv">'+neutral_amps.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Feeder ('+sets+' set'+(sets>1?'s':'')+', '+amps_per.toFixed(1)+'A/set, NEC 310.16 75°C)</span><span class="cv">'+feederWire+'</span></div>'
+    +'<div class="calc-line"><span>Neutral wire (NEC 310.16 75°C)</span><span class="cv">'+neutralWire+'</span></div>'
+    +'<div class="calc-line"><span>EGC (NEC 250.122, OCPD='+svcSize+'A)</span><span class="cv">'+egc+'</span></div>'
+    +'<div class="calc-line"><span>Generator kW needed</span><span class="cv">'+kw.toFixed(1)+' kW → '+gen+'</span></div>';
+
+  // ── Pool panel calc (reuse values computed in Step 3 above) ──
+  // Add pool extra loads to phase calc
+  var pncVA_total=pncVA_;
+  var phI=contAdj_/2+blowerVA_/2+lightVA_+pncVA_total/2;
+  var phJ=contAdj_/2+blowerVA_/2+pncVA_total/2;
+  var poolPhA=phI_/120, poolPhB=phJ_/120, poolMax=Math.max(poolPhA,poolPhB);
+  var poolSvc=minSvc(poolMax);
+  sv('rp_phA',poolPhA.toFixed(2));sv('rp_phB',poolPhB.toFixed(2));
+  sv('rp_wire',poolWire(poolMax,isAl));
+  document.getElementById('rp_mat').textContent=isAl?'Aluminum':'Copper';
+  sv('rp_panel',poolSvc+' A');
+  sv('rp_egc',egcWire(poolSvc,isAl));
+  var pcd=document.getElementById('pool_calc_detail');
+  if(pcd) pcd.innerHTML=
+    '<div class="calc-line"><span>Pool pump (cont. motor) VA</span><span class="cv">'+fmt(pmVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Heater VA (3.5t+5t+spa)</span><span class="cv">'+fmt(heaterVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Largest continuous × 125% (NEC 430.24)</span><span class="cv">'+fmt(largest_)+' × 1.25 = '+fmt(largest_*1.25)+'</span></div>'
+    +'<div class="calc-line"><span>Blower VA</span><span class="cv">'+fmt(blowerVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Pool light (120V → Phase A only)</span><span class="cv">'+fmt(lightVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Non-continuous + other loads</span><span class="cv">'+fmt(pncVA_total)+'</span></div>'
+    +'<div class="calc-line"><span>Phase A VA ÷ 120</span><span class="cv">'+fmt(phI_)+' ÷ 120 = '+poolPhA.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Phase B VA ÷ 120</span><span class="cv">'+fmt(phJ_)+' ÷ 120 = '+poolPhB.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Pool feeder VA in Step 3</span><span class="cv">'+fmt(Math.round(poolFdrVA))+' VA (auto)</span></div>'
+    +'<div class="calc-line"><span>Min. pool feeder wire (NEC 310.16 75°C)</span><span class="cv">'+poolWire(poolMax,isAl)+'</span></div>'
+    +'<div class="calc-line"><span>Pool panel EGC (NEC 250.122)</span><span class="cv">'+egcWire(poolSvc,isAl)+'</span></div>';
+}
+
+// ══ TABS ══
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    var panel=document.getElementById('tab-'+t.dataset.tab);
+    if(panel) panel.classList.add('active');
+  });
+});
+
+// ══ INIT ══
+window.addEventListener('load',function(){
+  buildAHU();
+  buildAppl();
+  buildPool();
+  addDryer(false,5000,1);
+  addCookItem('cooktop',false,0);
+  addCookItem('oven',false,0);
+  calc();
+});
+</script>
+</body>
+</html>
