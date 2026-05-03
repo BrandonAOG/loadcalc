@@ -615,12 +615,12 @@ var MOTOR_OPTS=[
 ];
 
 var APPLS=[
-  {id:'wh',   name:'Water Heater',       qty:1, va:4500,  volt:'240', canGas:true,  isMotor:false, vaOpts:[4500,3500,6000,9000,18000,28000,0]},
+  {id:'wh',   name:'Water Heater',       qty:1, va:4500,  volt:'240', canGas:true,  isMotor:false, vaOpts:[4500,3500,6000,9000,18000,28000,0], gasVA:100},
   {id:'ref',  name:'Refrigerator',       qty:1, va:1500,  volt:'120', canGas:false, isMotor:false, vaOpts:[1500,1400,1600,1700,1800]},
   {id:'frz',  name:'Freezer',            qty:1, va:600,   volt:'120', canGas:false, isMotor:false, vaOpts:[600,700,800,900,1000]},
   {id:'dw',   name:'Dishwasher',         qty:1, va:1030,  volt:'120', canGas:false, isMotor:false, vaOpts:[1030,1100,1200,1300,1400]},
   {id:'disp', name:'Disposal',           qty:1, va:828,   volt:'120', canGas:false, isMotor:true,  vaOpts:[]},
-  {id:'rh',   name:'Range Hood',         qty:1, va:540,   volt:'120', canGas:true,  isMotor:false, vaOpts:[540,400,700,1200]},
+  {id:'rh',   name:'Range Hood',         qty:1, va:540,   volt:'120', canGas:true,  isMotor:false, vaOpts:[540,400,700,1200], gasVA:0},
   {id:'mw',   name:'Microwave',          qty:1, va:1400,  volt:'120', canGas:false, isMotor:false, vaOpts:[1400,1000,1100,1200,1300,1500,1700]},
   {id:'ice',  name:'Ice Maker',          qty:0, va:1440,  volt:'120', canGas:false, isMotor:false, vaOpts:[1440,1600,1800,900]},
   {id:'mini', name:'Mini Fridge',        qty:0, va:340,   volt:'120', canGas:false, isMotor:false, vaOpts:[340,170,230,288]},
@@ -760,7 +760,7 @@ function addDryer(isGas, va, qty){
     +'<button class="btn btn-remove" onclick="removeDryer('+n+')">Remove</button>'
     +'</div>'
     +'<label class="chk-row" style="margin-bottom:8px;">'
-    +'<input type="checkbox" id="gas_dry'+n+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas Dryer — exclude from electric load</span></label>'
+    +'<input type="checkbox" id="gas_dry'+n+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas Dryer — adds 250 VA (ignition control)</span></label>'
     +'<div class="fg fg-2">'
     +'<div class="field"><label>Quantity</label><input type="number" id="qty_dry'+n+'" value="'+(qty||1)+'" min="0" oninput="calc()"></div>'
     +'<div class="field"><label>VA (type or select)</label>'
@@ -806,7 +806,7 @@ function addCookItem(type, isGas, va){
     +'</div>'
     +'<div class="cook-fields">'
     +'<label class="chk-row" style="margin-bottom:0;">'
-    +'<input type="checkbox" id="gas_'+cid+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas</span></label>'
+    +'<input type="checkbox" id="gas_'+cid+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas ('+(type==="cooktop"?"150 VA":"500 VA")+' control)</span></label>'
     +'<div class="field">'
     +'<label>Wattage</label>'
     +'<select id="sel_'+cid+'" onchange="cookSelChange(\''+cid+'\')" style="margin-bottom:3px;">'+opts+'</select>'
@@ -835,6 +835,8 @@ function buildPool(){
     +' <select id="pvolt_spa" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
     +'<option value="240" selected>240V</option><option value="120">120V</option>'
     +'</select>'
+    +' <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;margin-left:6px;">'
+    +'<input type="checkbox" id="gas_spa" onchange="calc()" style="accent-color:var(--amber);width:13px;height:13px;"> GAS (500VA)</label>'
     +'</span>'
     +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
     +'<select id="qty_spa" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
@@ -850,6 +852,8 @@ function buildPool(){
     +'<span class="pool-lbl">Pool Heater 3.5 ton HP'
     +' <select id="pvolt_ph35" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
     +'<option value="240" selected>240V</option></select>'
+    +' <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;margin-left:6px;">'
+    +'<input type="checkbox" id="gas_ph35" onchange="calc()" style="accent-color:var(--amber);width:13px;height:13px;"> GAS (500VA)</label>'
     +'</span>'
     +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
     +'<select id="qty_ph35" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
@@ -863,6 +867,8 @@ function buildPool(){
     +'<span class="pool-lbl">Pool Heater 5 ton HP'
     +' <select id="pvolt_ph5" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
     +'<option value="240" selected>240V</option></select>'
+    +' <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;margin-left:6px;">'
+    +'<input type="checkbox" id="gas_ph5" onchange="calc()" style="accent-color:var(--amber);width:13px;height:13px;"> GAS (500VA)</label>'
     +'</span>'
     +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
     +'<select id="qty_ph5" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
@@ -983,12 +989,14 @@ function calc(){
   document.getElementById('r2_note').textContent=totCool>=heatDem?'A/C @ 100%':'Heat @ '+(hf*100)+'%';
 
   // ── Pool panel total VA (from pool tab) ──
-  // Spa: qty × 11,000 VA (fixed)
+  // Spa: qty × 11,000 VA (fixed), or 500 VA control if gas
   var spaQty_=gv('qty_spa');
-  var spaVA_=spaQty_*11000;
-  // Heaters
-  var h35VA_=gv('qty_ph35')*gv('va_ph35');
-  var h5VA_ =gv('qty_ph5')*gv('va_ph5');
+  var gasSpa_=gc('gas_spa');
+  var spaVA_=spaQty_*(gasSpa_?500:11000);
+  // Heaters: full HP VA, or 500 VA control if gas
+  var gasPh35_=gc('gas_ph35'), gasPh5_=gc('gas_ph5');
+  var h35VA_=gv('qty_ph35')*(gasPh35_?500:gv('va_ph35'));
+  var h5VA_ =gv('qty_ph5')*(gasPh5_?500:gv('va_ph5'));
   var heaterVA_=h35VA_+h5VA_+spaVA_;
   // Blower and lights
   var blowerVA_=gv('va_blower');
@@ -1028,11 +1036,12 @@ function calc(){
     var va=isGas?0:gv('va_'+a.id);
     var qty=gv('qty_'+a.id);
     var volt=parseInt(gs('volt_'+a.id))||240;
-    var rowTot=isGas?0:qty*va;
+    var gasVA=isGas?(a.gasVA||0):0;  // ignition/control load when gas
+    var rowTot=isGas?(qty*gasVA):(qty*va);
     totApp+=rowTot;
     if(volt===120&&!isGas) totNeut120+=rowTot;
     var tc=document.getElementById('tot_'+a.id);
-    if(tc) tc.textContent=isGas?'GAS':fmt(rowTot);
+    if(tc) tc.textContent=isGas?(gasVA>0?'GAS +'+gasVA+'VA':'GAS'):fmt(rowTot);
   }
   // Extra appliance loads
   for(var n=1;n<=extraApplCount;n++){
@@ -1054,20 +1063,32 @@ function calc(){
   var s4=0;
   for(var n=1;n<=dryerCount;n++){
     if(!document.getElementById('dryer_'+n)) continue;
-    if(!gc('gas_dry'+n)) s4+=gv('qty_dry'+n)*gv('va_dry'+n);
+    if(gc('gas_dry'+n)){
+      s4+=gv('qty_dry'+n)*250;  // gas dryer: 250 VA ignition/control per unit
+    } else {
+      s4+=gv('qty_dry'+n)*gv('va_dry'+n);
+    }
   }
   sv('r4_tot',s4);
 
   // ── Step 5 ──
-  // Step 5: Optional Method — raw VA, no Col C demand factor
+  // Step 5: Optional Method — raw VA; gas appliances add ignition/control VA only
   var allGas=gc('gas_all'), s5=0;
   for(var n=1;n<=ctCount;n++){
     if(!document.getElementById('ci_cooktop_'+n)) continue;
-    if(!allGas&&!gc('gas_cooktop_'+n)) s5+=gv('va_cooktop_'+n);
+    if(!allGas&&gc('gas_cooktop_'+n)){
+      s5+=150;  // gas cooktop: 150 VA ignition/control
+    } else if(!allGas){
+      s5+=gv('va_cooktop_'+n);
+    }
   }
   for(var n=1;n<=ovCount;n++){
     if(!document.getElementById('ci_oven_'+n)) continue;
-    if(!allGas&&!gc('gas_oven_'+n)) s5+=gv('va_oven_'+n);
+    if(!allGas&&gc('gas_oven_'+n)){
+      s5+=500;  // gas range/oven: 500 VA ignition/control
+    } else if(!allGas){
+      s5+=gv('va_oven_'+n);
+    }
   }
   sv('r5_dem',s5);
 
@@ -1159,39 +1180,6 @@ function calc(){
   var pcd=document.getElementById('pool_calc_detail');
   if(pcd) pcd.innerHTML=
     '<div class="calc-line"><span>Pool pump (cont. motor) VA</span><span class="cv">'+fmt(pmVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Heater VA (3.5t+5t+spa)</span><span class="cv">'+fmt(heaterVA_)+'</span></div>'
+    +'<div class="calc-line"><span>Heater VA (3.5t'+( gasPh35_?' GAS':'')+'+5t'+(gasPh5_?' GAS':'')+'+spa'+(gasSpa_?' GAS':'')+') </span><span class="cv">'+fmt(heaterVA_)+' VA'+(gasPh35_||gasPh5_||gasSpa_?' (gas=500VA ctrl)':'')+' </span></div>'
     +'<div class="calc-line"><span>Largest continuous × 125% (NEC 430.24)</span><span class="cv">'+fmt(largest_)+' × 1.25 = '+fmt(largest_*1.25)+'</span></div>'
-    +'<div class="calc-line"><span>Blower VA</span><span class="cv">'+fmt(blowerVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Pool light (120V → Phase A only)</span><span class="cv">'+fmt(lightVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Non-continuous + other loads</span><span class="cv">'+fmt(pncVA_total)+'</span></div>'
-    +'<div class="calc-line"><span>Phase A VA ÷ 120</span><span class="cv">'+fmt(phI_)+' ÷ 120 = '+poolPhA.toFixed(2)+' A</span></div>'
-    +'<div class="calc-line"><span>Phase B VA ÷ 120</span><span class="cv">'+fmt(phJ_)+' ÷ 120 = '+poolPhB.toFixed(2)+' A</span></div>'
-    +'<div class="calc-line"><span>Pool feeder VA in Step 3</span><span class="cv">'+fmt(Math.round(poolFdrVA))+' VA (auto)</span></div>'
-    +'<div class="calc-line"><span>Min. pool feeder wire (NEC 310.16 75°C)</span><span class="cv">'+poolWire(poolMax,isAl)+'</span></div>'
-    +'<div class="calc-line"><span>Pool panel EGC (NEC 250.122)</span><span class="cv">'+egcWire(poolSvc,isAl)+'</span></div>';
-}
-
-// ══ TABS ══
-document.querySelectorAll('.tab').forEach(function(t){
-  t.addEventListener('click',function(){
-    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
-    document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.remove('active');});
-    t.classList.add('active');
-    var panel=document.getElementById('tab-'+t.dataset.tab);
-    if(panel) panel.classList.add('active');
-  });
-});
-
-// ══ INIT ══
-window.addEventListener('load',function(){
-  buildAHU();
-  buildAppl();
-  buildPool();
-  addDryer(false,5000,1);
-  addCookItem('cooktop',false,0);
-  addCookItem('oven',false,0);
-  calc();
-});
-</script>
-</body>
-</html>
+    
