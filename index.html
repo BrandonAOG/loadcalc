@@ -195,11 +195,32 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
 .va-combo select{flex:1;}
 .va-combo input{width:90px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;background:#fff;}
 
+/* ── SCREEN PRINT (full app) ── */
 @media print{
   .topbar,.tabs-bar,.btn{display:none!important;}
   .tab-panel{display:block!important;}
   .sum-panel{background:#1C2333!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .main{padding:0;}
+}
+/* ── PRINT REPORT sheet ── */
+#print-report{display:none;}
+@media print{
+  body.printing-report > *:not(#print-report){display:none!important;}
+  #print-report{
+    display:block!important;
+    font-family:'Share Tech Mono',monospace;
+    font-size:9.5pt;
+    color:#000;
+    background:#fff;
+    width:8.5in;
+    min-height:11in;
+    margin:0;
+    padding:.35in .4in .3in .4in;
+    box-sizing:border-box;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  @page{size:8.5in 11in;margin:0;}
 }
 </style>
 </head>
@@ -222,7 +243,8 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
   <!-- Right buttons -->
   <div style="display:flex;gap:6px;align-items:center;">
     <button onclick="window.location.href='https://brandonaog.github.io/AOG-hub/'" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(217,119,6,0.1);border:1px solid rgba(217,119,6,0.4);color:#D97706;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(217,119,6,0.25)'" onmouseout="this.style.background='rgba(217,119,6,0.1)'">🏠 Hub</button>
-    <button onclick="window.print()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">⎙ Print</button>
+    <button onclick="printReport()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.5);color:#D97706;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(217,119,6,0.3)'" onmouseout="this.style.background='rgba(217,119,6,0.15)'">⎙ Report</button>
+    <button onclick="window.print()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">⎙ Full</button>
     <button onclick="if(confirm('Reset all fields?'))location.reload()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;cursor:pointer;border-radius:3px;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">↺ Reset</button>
   </div>
 </div>
@@ -359,7 +381,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
     <div class="card-head">
       <span class="step-tag">STEP 2</span>
       <div class="card-title">A/C Condensers &amp; Fixed Electric Space Heating</div>
-      <div class="card-sub">Art. 220.82(C) — Largest of: Heat × 65% (≤4 units) or 40% (&gt;4), vs A/C/HP @ 100%</div>
+      <div class="card-sub">Art. 220.82(C) — Blower always @ 100% · Heat element × 65% (≤4 units) or 40% (&gt;4 units) · vs CU/HP + Blower @ 100%</div>
     </div>
     <div class="card-body" style="padding:8px 14px;">
       <div id="ahu_rows"></div>
@@ -521,7 +543,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       </div>
       <div class="help-sec">
         <h3><span class="hbadge">Step 2</span> HVAC</h3>
-        <p>Select CU/HP tonnage and supplemental heat for each AHU. The NEC uses the <em>larger</em> of total electric heat (×65% for ≤4 units, ×40% for &gt;4) vs total A/C at 100%. Gas furnace = select "GAS + blower" so only the blower VA counts.</p>
+        <p>Select CU/HP tonnage and supplemental heat for each AHU. The NEC uses the <em>larger</em> of: (a) heat element × 65% (≤4 units) or ×40% (&gt;4 units) + blower @ 100%, vs (b) CU/HP load + blower @ 100%. The blower is never derated — always counts at 100%. Gas furnace = select "GAS + blower" so only the blower VA counts.</p>
       </div>
       <div class="help-sec">
         <h3><span class="hbadge">Step 3</span> Fixed Appliances</h3>
@@ -625,11 +647,25 @@ function fmt(n,dec){if(dec)return n.toLocaleString('en-US',{minimumFractionDigit
 var CU_OPTS=[[0,'— none —'],[1840,'1 ton (1,840)'],[2200,'1.5 ton (2,200)'],[2850,'2 ton (2,850)'],
   [3600,'2.5 ton (3,600)'],[4275,'3 ton (4,275)'],[5000,'3.5 ton (5,000)'],[5700,'4 ton (5,700)'],
   [7130,'5 ton (7,130)'],[1295,'Mini Split DP20'],[1887,'Mini Split DP25'],[2047,'Mini Split DP30']];
-var SH_OPTS=[[0,'— GAS / none —'],[5800,'5kW+800=5,800'],[8300,'7.5kW+800=8,300'],
-  [8800,'8kW+800=8,800'],[10800,'9.6kW+1,200=10,800'],[11600,'10kW+1,600=11,600'],
-  [14100,'12.5kW+1,600=14,100'],[16600,'15kW+1,600=16,600'],[20400,'18kW+2,400=20,400'],
-  [23400,'21kW+2,400=23,400'],[25400,'23kW+2,400=25,400'],[28600,'25kW+3,600=28,600'],
-  [32600,'29kW+3,600=32,600'],[1200,'GAS+1,200 blwr'],[1800,'0.5kW+1,800 blwr']];
+// SH_OPTS: [total_VA, heat_element_VA, blower_VA, label]
+// Blower is always at 100%; only heat_element gets the demand factor
+var SH_OPTS=[
+  [0,    0,     0,    '— GAS / none —'],
+  [5800, 5000,  800,  '5 kW + 800 blwr = 5,800'],
+  [8300, 7500,  800,  '7.5 kW + 800 blwr = 8,300'],
+  [8800, 8000,  800,  '8 kW + 800 blwr = 8,800'],
+  [10800,9600,  1200, '9.6 kW + 1,200 blwr = 10,800'],
+  [11600,10000, 1600, '10 kW + 1,600 blwr = 11,600'],
+  [14100,12500, 1600, '12.5 kW + 1,600 blwr = 14,100'],
+  [16600,15000, 1600, '15 kW + 1,600 blwr = 16,600'],
+  [20400,18000, 2400, '18 kW + 2,400 blwr = 20,400'],
+  [23400,21000, 2400, '21 kW + 2,400 blwr = 23,400'],
+  [25400,23000, 2400, '23 kW + 2,400 blwr = 25,400'],
+  [28600,25000, 3600, '25 kW + 3,600 blwr = 28,600'],
+  [32600,29000, 3600, '29 kW + 3,600 blwr = 32,600'],
+  [1200, 0,     1200, 'GAS + 1,200 blwr'],
+  [1800, 500,   1800, '0.5 kW + 1,800 blwr']
+];
 
 // HP motor options for appliances (single-phase, selectable voltage)
 var MOTOR_OPTS=[
@@ -669,9 +705,10 @@ var poolNcCount   = 0;    // non-continuous loads
 var poolExtraCount = 0;   // legacy — kept for calc compat
 
 // ══ BUILD UI ══
+var MAX_AHU=10;
 function buildAHU(){
   var h='';
-  for(var i=0;i<5;i++){
+  for(var i=0;i<MAX_AHU;i++){
     var cu='',sh='';
     for(var j=0;j<CU_OPTS.length;j++){
       var s=(i===0&&CU_OPTS[j][0]===4275)||(i!==0&&CU_OPTS[j][0]===0)?' selected':'';
@@ -679,7 +716,7 @@ function buildAHU(){
     }
     for(var j=0;j<SH_OPTS.length;j++){
       var s=(i===0&&SH_OPTS[j][0]===8800)||(i!==0&&SH_OPTS[j][0]===0)?' selected':'';
-      sh+='<option value="'+SH_OPTS[j][0]+'"'+s+'>'+SH_OPTS[j][1]+'</option>';
+      sh+='<option value="'+SH_OPTS[j][0]+'"'+s+'>'+SH_OPTS[j][3]+'</option>';
     }
     h+='<div class="ahu-row"><span class="ahu-lbl">AHU '+(i+1)+'</span>'
       +'<select id="cu'+(i+1)+'" onchange="calc()" style="background:#EEF2FF">'+cu+'</select>'
@@ -1077,18 +1114,34 @@ function calc(){
   sv('r1_gl',gl);sv('r1_sa',sa);sv('r1_lc',lc);sv('r1_tot',s1);
 
   // ── Step 2 ──
-  var totCool=0,totHeat=0,nUnits=0;
-  for(var i=1;i<=5;i++){
-    var cu=gv('cu'+i),sh=gv('sh'+i);
-    if(cu>0||sh>0) nUnits++;
-    totCool+=cu; totHeat+=sh;
+  // Step 2: Separate blower VA from heat element — blower is always 100%, never derated
+  // NEC 220.82(C): heat element × factor (65% for ≤4 units, 40% for >4) + blower @ 100%
+  // Cooling: CU/HP load + blower @ 100%
+  // Step 2 = MAX(heatDemand, coolDemand)
+  var totCU=0, totHeatElement=0, totBlower=0, nUnits=0;
+  for(var i=1;i<=MAX_AHU;i++){
+    var cuVal=gv('cu'+i);
+    var shTotal=gv('sh'+i);
+    if(cuVal>0||shTotal>0) nUnits++;
+    totCU+=cuVal;
+    // Find matching SH_OPT to split heat element from blower
+    var heatEl=0, blowerEl=0;
+    for(var k=0;k<SH_OPTS.length;k++){
+      if(SH_OPTS[k][0]===shTotal){ heatEl=SH_OPTS[k][1]; blowerEl=SH_OPTS[k][2]; break; }
+    }
+    totHeatElement+=heatEl;
+    totBlower+=blowerEl;
   }
+  var totHeat=totHeatElement+totBlower;  // total heat VA (for display)
+  var totCool=totCU+totBlower;            // cooling = CU + blower @ 100%
   var hf=nUnits>4?0.40:0.65;
-  var heatDem=totHeat*hf, s2=Math.max(heatDem,totCool);
+  // Heat demand: heat element × factor + blower @ 100%
+  var heatDem=totHeatElement*hf+totBlower;
+  var s2=Math.max(heatDem,totCool);
   sv('r2_heat',totHeat);sv('r2_cool',totCool);
   sv('r2_hf',(hf*100).toFixed(0)+'%');
   sv('r2_s2',Math.round(s2));
-  document.getElementById('r2_note').textContent=totCool>=heatDem?'A/C @ 100%':'Heat @ '+(hf*100)+'%';
+  document.getElementById('r2_note').textContent=totCool>=heatDem?'A/C + Blower @ 100%':'Heat×'+Math.round(hf*100)+'% + Blower @ 100%';
 
   // ── Pool panel total VA (from pool tab) ──
   // Spa: qty × 11,000 VA (fixed), or 500 VA control if gas
@@ -1336,6 +1389,218 @@ window.addEventListener('load',function(){
   addCookItem('oven',false,0);
   calc();
 });
+</script>
+
+<!-- ═══ PRINT REPORT DIV (hidden on screen, shown when printing) ═══ -->
+<div id="print-report"></div>
+
+<script>
+function tv(id){
+  var e=document.getElementById(id);
+  return e ? (e.textContent||'—').trim() : '—';
+}
+function iv(id){
+  var e=document.getElementById(id);
+  return e ? (e.value||'').trim() : '';
+}
+
+function printReport(){
+  // ── Collect job info ──
+  var co    = iv('j_co');
+  var addr  = iv('j_addr');
+  var city  = iv('j_city');
+  var phone = iv('j_phone');
+
+  // ── Collect appliance rows ──
+  var applLines = [];
+  var rows = document.querySelectorAll('#appl_rows tr');
+  rows.forEach(function(tr){
+    var nameEl = tr.querySelector('input[type=text]');
+    var qtyEl  = tr.querySelector('input[type=number]');
+    var totEl  = tr.querySelector('.tot-cell');
+    if(!nameEl || !totEl) return;
+    var name = nameEl.value||'';
+    var tot  = (totEl.textContent||'').trim();
+    if(tot==='—'||tot==='0'||!tot) return;
+    applLines.push({name:name, tot:tot});
+  });
+  // Pool panel row
+  var pp = document.getElementById('tot_pool_panel');
+  if(pp && pp.textContent && pp.textContent!=='—')
+    applLines.push({name:'Pool Equip. Panel', tot:pp.textContent.trim()});
+
+  // ── Dryers ──
+  var dryerLines = [];
+  for(var n=1;n<=dryerCount;n++){
+    var dr = document.getElementById('dryer_'+n);
+    if(!dr) continue;
+    var gas = document.getElementById('gas_dry'+n);
+    var qty = document.getElementById('qty_dry'+n);
+    var va  = document.getElementById('va_dry'+n);
+    if(!qty||!va) continue;
+    var label = (gas&&gas.checked)?'Gas Dryer (250VA ctrl)':'Electric Dryer';
+    var val   = (gas&&gas.checked)
+      ? (parseInt(qty.value)||1)*250
+      : (parseInt(qty.value)||1)*(parseInt(va.value)||5000);
+    if(val) dryerLines.push({name:label+' ×'+(qty.value||1), tot:val.toLocaleString()});
+  }
+
+  // ── Cooking ──
+  var cookLines = [];
+  for(var n=1;n<=ctCount;n++){
+    var ci=document.getElementById('ci_cooktop_'+n); if(!ci) continue;
+    var gasck=document.getElementById('gas_cooktop_'+n);
+    var vael=document.getElementById('va_cooktop_'+n);
+    var isgas=gasck&&gasck.checked;
+    var val=isgas?150:(parseInt(vael&&vael.value)||0);
+    if(val) cookLines.push({name:'Cooktop '+(isgas?'(gas 150VA)':'electric'), tot:val.toLocaleString()});
+  }
+  for(var n=1;n<=ovCount;n++){
+    var ci=document.getElementById('ci_oven_'+n); if(!ci) continue;
+    var gasck=document.getElementById('gas_oven_'+n);
+    var vael=document.getElementById('va_oven_'+n);
+    var isgas=gasck&&gasck.checked;
+    var val=isgas?500:(parseInt(vael&&vael.value)||0);
+    if(val) cookLines.push({name:'Oven/Range '+(isgas?'(gas 500VA)':'electric'), tot:val.toLocaleString()});
+  }
+
+  // ── HVAC ──
+  var hvacLines=[];
+  var cu_labels=['1 ton','1.5 ton','2 ton','2.5 ton','3 ton','3.5 ton','4 ton','5 ton'];
+  for(var i=1;i<=MAX_AHU;i++){
+    var cus=document.getElementById('cu'+i);
+    var shs=document.getElementById('sh'+i);
+    if(!cus||!shs) continue;
+    var cuv=parseInt(cus.value)||0, shv=parseInt(shs.value)||0;
+    if(cuv||shv) hvacLines.push({name:'AHU '+i, cu:cuv, sh:shv});
+  }
+
+  // ── Summary values ──
+  var s1=tv('r1_tot'), s2=tv('r2_s2')+' '+tv('r2_note');
+  var s3=tv('r3_tot'), s4=tv('r4_tot'), s5=tv('r5_dem');
+  var baseDemStr=document.getElementById('br_dem')?document.getElementById('br_dem').textContent:'—';
+  var svcDem=tv('s_dem'), amps=tv('s_amps'), minSvc=tv('s_svc');
+  var neutral=tv('s_neut'), feeder=tv('s_feed'), nwire=tv('s_nwire');
+  var egc=tv('s_egc'), gen=tv('s_gen'), fuel=tv('s_fuel');
+  var mat=document.getElementById('s_mat')?document.getElementById('s_mat').textContent:'—';
+
+  // ── Pool ──
+  var phA=tv('rp_phA'), phB=tv('rp_phB');
+  var pwire=tv('rp_wire'), ppanel=tv('rp_panel'), pegc=tv('rp_egc');
+
+  // ── Build HTML ──
+  var H = function(tag,cls,content){ return '<'+tag+(cls?' class="'+cls+'"':'')+'>'+content+'</'+tag+'>'; };
+
+  var applRows = applLines.map(function(r){
+    return '<tr><td>'+r.name+'</td><td class="r">'+r.tot+' VA</td></tr>';
+  }).join('');
+  applRows += dryerLines.map(function(r){
+    return '<tr><td>'+r.name+'</td><td class="r">'+r.tot+' VA</td></tr>';
+  }).join('');
+  applRows += cookLines.map(function(r){
+    return '<tr><td>'+r.name+'</td><td class="r">'+r.tot+' VA</td></tr>';
+  }).join('');
+
+  var hvacRows = hvacLines.map(function(r){
+    return '<tr><td>'+r.name+'</td><td class="r">CU: '+r.cu.toLocaleString()+' VA</td><td class="r">Heat: '+r.sh.toLocaleString()+' VA</td></tr>';
+  }).join('');
+
+  var html = `
+<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #D97706;padding-bottom:6pt;margin-bottom:10pt;">
+  <div>
+    <div style="font-family:Orbitron,monospace;font-size:16pt;font-weight:700;color:#D97706;letter-spacing:2px;">Always On Generators</div>
+    <div style="font-size:8pt;color:#555;letter-spacing:1px;margin-top:2pt;">RESIDENTIAL LOAD CALCULATION — NEC 2020 ART. 220.82 OPTIONAL METHOD</div>
+  </div>
+  <div style="text-align:right;font-size:8pt;color:#333;">
+    <div style="font-weight:700;">${co||'Always On Generators'}</div>
+    <div>${addr}</div><div>${city}</div><div>${phone}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12pt;margin-bottom:10pt;">
+
+  <!-- Left: load inputs -->
+  <div>
+    <div class="sh">Step 1 — Lighting &amp; Circuits</div>
+    <table class="dt"><tr><td>General Lighting (3VA/ft²)</td><td class="r">${tv('r1_gl')} VA</td></tr>
+    <tr><td>Small Appliance Circuits</td><td class="r">${tv('r1_sa')} VA</td></tr>
+    <tr><td>Laundry Circuits</td><td class="r">${tv('r1_lc')} VA</td></tr>
+    <tr class="tot"><td>Step 1 Total</td><td class="r">${s1} VA</td></tr></table>
+
+    <div class="sh">Step 2 — HVAC (added @ 100% after demand factor)</div>
+    <table class="dt"><tr><th>Unit</th><th class="r">CU/HP</th><th class="r">Heat</th></tr>${hvacRows||'<tr><td colspan="3" style="color:#888">No HVAC entered</td></tr>'}
+    <tr class="tot"><td>Step 2 Applied</td><td class="r" colspan="2">${tv('r2_s2')} VA — ${tv('r2_note')}</td></tr></table>
+
+    <div class="sh">Step 3 — Fixed Appliances</div>
+    <table class="dt">${applRows||'<tr><td>None</td><td></td></tr>'}
+    <tr class="tot"><td>Step 3 Total (raw VA)</td><td class="r">${s3} VA</td></tr></table>
+
+    <div class="sh">Step 4 — Dryer &amp; Step 5 — Cooking</div>
+    <table class="dt"><tr><td>Dryer Load</td><td class="r">${s4} VA</td></tr>
+    <tr><td>Cooking Load</td><td class="r">${s5} VA</td></tr></table>
+  </div>
+
+  <!-- Right: results -->
+  <div>
+    <div class="sh">Service Demand — NEC 220.82</div>
+    <table class="dt">
+      <tr><td>Base loads (Steps 1+3+4+5)</td><td class="r">${tv('br_tot')} VA</td></tr>
+      <tr><td>Demand (first 10k@100%, rest@40%)</td><td class="r">—</td></tr>
+      <tr><td>+ HVAC @ 100%</td><td class="r">+ ${tv('r2_s2')} VA</td></tr>
+      <tr class="tot"><td>Service Demand</td><td class="r">${svcDem} VA</td></tr>
+      <tr><td>Demand @ 240V, 1φ</td><td class="r">${amps} A</td></tr>
+      <tr><td>Minimum Service Size</td><td class="r">${minSvc} A</td></tr>
+      <tr><td>Neutral Demand (NEC 220.61)</td><td class="r">${neutral} A</td></tr>
+    </table>
+
+    <div class="sh">Conductor Sizing — NEC 310.16 (75°C) · ${mat}</div>
+    <table class="dt">
+      <tr><td>Ungrounded (Hot) Feeder</td><td class="r">${feeder}</td></tr>
+      <tr><td>Grounded (Neutral) Wire</td><td class="r">${nwire}</td></tr>
+      <tr><td>Equipment Grounding Cond. (NEC 250.122)</td><td class="r">${egc}</td></tr>
+    </table>
+
+    <div class="sh">Generator — ${fuel}</div>
+    <table class="dt">
+      <tr class="tot"><td>Minimum Generator Required</td><td class="r" style="font-size:11pt;font-weight:700;color:#D97706;">${gen}</td></tr>
+    </table>
+
+    <div class="sh">Pool Panel Feeder — NEC 680</div>
+    <table class="dt">
+      <tr><td>Phase A</td><td class="r">${phA} A</td></tr>
+      <tr><td>Phase B</td><td class="r">${phB} A</td></tr>
+      <tr><td>Min. Pool Feeder Wire</td><td class="r">${pwire}</td></tr>
+      <tr><td>Min. Panel Rating</td><td class="r">${ppanel}</td></tr>
+      <tr><td>Pool EGC (NEC 250.122)</td><td class="r">${pegc}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div style="border-top:1pt solid #ccc;padding-top:5pt;font-size:7pt;color:#888;display:flex;justify-content:space-between;">
+  <span>Generated by Always On Generators Load Calc · NEC 2020 · Art. 220.82 Optional Method</span>
+  <span>${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</span>
+</div>
+
+<style>
+  .sh{font-family:Orbitron,monospace;font-size:7.5pt;font-weight:700;letter-spacing:1.5px;
+      text-transform:uppercase;color:#D97706;border-bottom:1pt solid #D97706;
+      padding:4pt 0 2pt;margin:8pt 0 3pt;}
+  .dt{width:100%;border-collapse:collapse;font-size:8.5pt;}
+  .dt td,.dt th{padding:2pt 4pt;border-bottom:0.5pt solid #e8e8e8;vertical-align:top;}
+  .dt th{font-size:7.5pt;font-weight:700;color:#555;text-transform:uppercase;}
+  .dt .r{text-align:right;font-family:'Share Tech Mono',monospace;white-space:nowrap;}
+  .dt .tot td{font-weight:700;border-top:1pt solid #ccc;border-bottom:1pt solid #ccc;background:#fafafa;}
+</style>`;
+
+  var div = document.getElementById('print-report');
+  div.innerHTML = html;
+  document.body.classList.add('printing-report');
+  window.print();
+  setTimeout(function(){
+    document.body.classList.remove('printing-report');
+    div.innerHTML='';
+  }, 1500);
+}
 </script>
 </body>
 </html>
