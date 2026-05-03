@@ -287,6 +287,9 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
             <option value="3">3 Sets</option>
             <option value="4">4 Sets</option>
           </select>
+          <div id="parallel_warn" style="display:none;margin-top:6px;background:#fff3cd;border:1px solid #f0a500;border-left:4px solid #f0a500;border-radius:4px;padding:7px 10px;font-size:11px;color:#7a4f00;line-height:1.5;">
+            ⚠️ <strong>NEC 310.10(H):</strong> Conductors smaller than 1/0 AWG cannot be paralleled. Increase sets or select a larger single conductor.
+          </div>
         </div>
       </div>
     </div>
@@ -300,7 +303,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
         <tr><td class="bl">Step 2 — A/C or Heat (largest)</td><td class="bv" id="br2">—</td></tr>
         <tr><td class="bl">Step 3 — Fixed Appliances (raw VA)</td><td class="bv" id="br3">—</td></tr>
         <tr><td class="bl">Step 4 — Dryer Demand</td><td class="bv" id="br4">—</td></tr>
-        <tr><td class="bl">Step 5 — Cooking Demand (Col C)</td><td class="bv" id="br5">—</td></tr>
+        <tr><td class="bl">Step 5 — Cooking (raw VA)</td><td class="bv" id="br5">—</td></tr>
         <tr class="br-total"><td>Total Connected Load</td><td class="bv" id="br_tot">—</td></tr>
         <tr class="br-demand">
           <td>Service Demand<br><span class="br-note">First 10,000 VA @ 100%, remainder @ 40%</span></td>
@@ -425,7 +428,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
     <div class="card-head">
       <span class="step-tag">STEP 5</span>
       <div class="card-title">Electric Cooking Equipment</div>
-      <div class="card-sub">Art. 220.82(B)(3) — NEC Table 220.55 Col C · 5,000–12,500 W in 500 W steps · Gas excludes individual appliance</div>
+      <div class="card-sub">Art. 220.82(B)(3) — Raw VA added to demand pool · 5,000–12,500 W in 500 W steps · Gas excludes individual appliance</div>
     </div>
     <div class="card-body">
       <label class="chk-row">
@@ -438,13 +441,9 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       <button class="btn btn-add btn-sm" onclick="addCookItem('oven')">+ Add Oven / Range</button>
       <div class="div"></div>
       <div class="chips">
-        <div class="chip"><div class="cl">Raw Cooking Total</div><div class="cv" id="r5_raw">—</div><div class="cu">VA</div></div>
-        <div class="chip hl"><div class="cl">Step 5 Col C Demand</div><div class="cv" id="r5_dem">—</div><div class="cu">VA</div></div>
+        <div class="chip hl"><div class="cl">Step 5 Cooking Total</div><div class="cv" id="r5_dem">—</div><div class="cu">VA (raw, no demand factor)</div></div>
       </div>
-      <div class="calc-show" style="margin-top:10px;">
-        <h4>Table 220.55 Col C Formula Applied</h4>
-        <div id="cook_calc_detail">—</div>
-      </div>
+
     </div>
   </div>
 </div>
@@ -458,7 +457,10 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
     </div>
     <div class="card-body">
       <div id="pool_rows"></div>
-      <div style="padding:10px 0 4px;"><button class="btn btn-add btn-sm" onclick="addPoolLoad()">+ Add Load</button></div>
+      <div style="padding:10px 0 4px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-add btn-sm" onclick="addPoolPump()">+ Add Pool Pump</button>
+        <button class="btn btn-add btn-sm" onclick="addPoolNC()">+ Add Non-Continuous Load</button>
+      </div>
       <div class="chips" style="margin-top:10px;">
         <div class="chip hl"><div class="cl">Phase A Amps</div><div class="cv" id="rp_phA">—</div><div class="cu">A</div></div>
         <div class="chip hl"><div class="cl">Phase B Amps</div><div class="cv" id="rp_phB">—</div><div class="cu">A</div></div>
@@ -505,7 +507,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       </div>
       <div class="help-sec">
         <h3><span class="hbadge">Step 5</span> Cooking</h3>
-        <p>Add cooktops and ovens/ranges individually. Each can be marked gas (excluded). Wattage selectable from 5,000–12,500 W in 500 W steps, or type a custom value. The "All Gas Kitchen" checkbox zeros all cooking at once. Combined raw wattage runs through <strong>NEC Table 220.55 Col C</strong> for the demand load.</p>
+        <p>Add cooktops and ovens/ranges individually. Each can be marked gas (excluded). Wattage selectable from 5,000–12,500 W in 500 W steps, or type a custom value. The "All Gas Kitchen" checkbox zeros all cooking at once. The raw VA is added directly to the demand pool — no Col C demand factor applies under the Optional Method (NEC 220.82).</p>
       </div>
       <div class="help-sec">
         <h3>Pool Panel Tab</h3>
@@ -570,30 +572,7 @@ function egcWire(ocpd,isAl){return wireSize(ocpd,isAl?EGC_AL:EGC_CU);}
 function poolWire(a,isAl){return wireSize(a,isAl?AL75:CU75);}
 function minSvc(a){var s=[100,110,125,150,175,200,225,250,300,350,400,450,500,600,700,800];for(var i=0;i<s.length;i++)if(a<=s[i])return s[i];return 800;}
 
-// NEC Table 220.55 Col C cooking demand
-function cookDem(r){
-  if(!r||r<=0) return 0;
-  if(r<=1749)  return r;
-  if(r<=3499)  return r*0.8;
-  if(r<=8749)  return 8000;
-  if(r<=12499) return 8000+(r-8750)*0.2;
-  if(r<=17499) return 11000+(r-12500)*0.3;
-  if(r<=20499) return 14000+(r-17500)*0.333;
-  if(r<=24499) return 17000+(r-20500)*0.25;
-  if(r<=29999) return 19000+(r-24500)*0.222;
-  return 25000;
-}
-function cookNote(r){
-  if(!r||r<=0) return 'No electric cooking';
-  if(r<=3499)  return r<=1749?'< 1,750 W: 100%':'1,750–3,499 W: 80%';
-  if(r<=8749)  return '3,500–8,749 W: flat 8,000 VA';
-  if(r<=12499) return '8,750–12,499 W: 8,000 + 20% of excess over 8,750';
-  if(r<=17499) return '12,500–17,499 W: 11,000 + 30% of excess over 12,500';
-  if(r<=20499) return '17,500–20,499 W: 14,000 + 33% of excess over 17,500';
-  if(r<=24499) return '20,500–24,499 W: 17,000 + 25% of excess over 20,500';
-  if(r<=29999) return '24,500–29,999 W: 19,000 + 22% of excess over 24,500';
-  return '≥ 30,000 W: flat 25,000 VA';
-}
+// Cooking: optional method uses raw VA directly (no Col C demand factor)
 
 // ── Generators ──
 var GENS=[['AC 10KW',10,9],['AC 12KW',12,12],['AC 14KW',14,14],['AC 16KW',16,16],
@@ -658,17 +637,10 @@ var APPLS=[
   {id:'sp2',  name:'Spare 240V',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,1500,2000,3000,5000]},
 ];
 
-var POOL_ROWS=[
-  {id:'pm',    label:'Pool Pump (continuous)', isMotor:true, volt:'240', def_va:0},
-  {id:'pnc',   label:'Non-continuous Load',    isMotor:false,volt:'240', def_va:0},
-  {id:'spa',   label:'Spa Heater 11 kVA',      isMotor:false,volt:'240', def_va:0, qty:true, def_qty:0},
-  {id:'ph35',  label:'Pool Heater 3.5 ton HP', isMotor:true, volt:'240', def_va:6250, qty:true, def_qty:0},
-  {id:'ph5',   label:'Pool Heater 5 ton HP',   isMotor:true, volt:'240', def_va:10125,qty:true, def_qty:0},
-  {id:'plight',label:'Pool Light (120V ea.)',  isMotor:false,volt:'120', def_va:300,  qty:true, def_qty:0},
-  {id:'blower',label:'Blower Motor',           isMotor:true, volt:'240', def_va:0},
-  // Additional loads added dynamically via addPoolLoad()
-];
-var poolExtraCount = 0;
+// Pool pumps and non-continuous loads are fully dynamic
+var poolPumpCount = 0;    // continuous motors (pool pumps, heaters)
+var poolNcCount   = 0;    // non-continuous loads
+var poolExtraCount = 0;   // legacy — kept for calc compat
 
 // ══ BUILD UI ══
 function buildAHU(){
@@ -854,57 +826,122 @@ function removeCook(cid){var e=document.getElementById('ci_'+cid);if(e)e.remove(
 
 // ── Pool ──
 function buildPool(){
-  var h='';
-  for(var i=0;i<POOL_ROWS.length;i++){
-    var r=POOL_ROWS[i];
-    var inp;
-    var voltSel='<select id="pvolt_'+r.id+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;">'
-      +'<option value="120"'+(r.volt==="120"?" selected":"")+'>120V</option>'
-      +'<option value="240"'+(r.volt==="240"?" selected":"")+'>240V</option>'
-      +'</select>';
-    if(r.qty){
-      var qtySel='<select id="qty_'+r.id+'" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
-        +'<option value="0"'+(r.def_qty===0?" selected":"")+'>0</option>'
-        +'<option value="1"'+(r.def_qty===1?" selected":"")+'>1</option>'
-        +'<option value="2">2</option><option value="3">3</option></select>';
-      if(r.isMotor){
-        inp=qtySel+'<span style="margin:0 3px;font-size:11px;color:var(--text3);">×</span>'+buildMotorSel("va_"+r.id, r.def_va, r.volt);
-      } else {
-        inp=qtySel+'<span style="margin:0 3px;font-size:11px;color:var(--text3);">×</span>'
-          +'<input type="number" id="va_'+r.id+'" value="'+r.def_va+'" min="0" oninput="calc()" style="width:90px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;">';
-      }
-    } else if(r.isMotor){
-      inp=buildMotorSel("va_"+r.id, r.def_va, r.volt);
-    } else {
-      inp='<input type="number" id="va_'+r.id+'" value="'+r.def_va+'" min="0" oninput="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;width:100%;">';
-    }
-    h+='<div class="pool-row">'
-      +'<span class="pool-lbl">'+r.label+' <span style="margin-left:4px;">'+voltSel+'</span></span>'
-      +'<div class="pool-inp" style="display:flex;align-items:center;gap:4px;">'+inp+'</div>'
-      +'</div>';
-  }
-  h+='<div id="pool_extra_rows"></div>';
-  document.getElementById("pool_rows").innerHTML=h;
+  var container = document.getElementById('pool_rows');
+  if(!container) return;
+  container.innerHTML =
+    // ── Spa Heater (qty × read-only 11,000 VA) ──
+    '<div class="pool-row" id="pool_spa_row">'
+    +'<span class="pool-lbl">Spa Heater'
+    +' <select id="pvolt_spa" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option><option value="120">120V</option>'
+    +'</select>'
+    +'</span>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
+    +'<select id="qty_spa" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
+    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>'
+    +'</select>'
+    +'<span style="font-size:11px;color:var(--text3);">×</span>'
+    +'<input type="number" id="va_spa" value="11000" readonly style="width:90px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;background:var(--surface2);color:var(--text3);cursor:not-allowed;">'
+    +'<span style="font-size:10px;color:var(--text3);">VA (fixed)</span>'
+    +'</div>'
+    +'</div>'
+    // ── Pool Heater 3.5 ton ──
+    +'<div class="pool-row">'
+    +'<span class="pool-lbl">Pool Heater 3.5 ton HP'
+    +' <select id="pvolt_ph35" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option></select>'
+    +'</span>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
+    +'<select id="qty_ph35" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
+    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option>'
+    +'</select>'
+    +'<span style="font-size:11px;color:var(--text3);">×</span>'
+    +buildMotorSel("va_ph35", 6250, "240")
+    +'</div></div>'
+    // ── Pool Heater 5 ton ──
+    +'<div class="pool-row">'
+    +'<span class="pool-lbl">Pool Heater 5 ton HP'
+    +' <select id="pvolt_ph5" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option></select>'
+    +'</span>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
+    +'<select id="qty_ph5" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
+    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option>'
+    +'</select>'
+    +'<span style="font-size:11px;color:var(--text3);">×</span>'
+    +buildMotorSel("va_ph5", 10125, "240")
+    +'</div></div>'
+    // ── Pool Lights ──
+    +'<div class="pool-row">'
+    +'<span class="pool-lbl">Pool Light (300 VA ea.)'
+    +' <select id="pvolt_plight" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="120" selected>120V</option><option value="240">240V</option>'
+    +'</select>'
+    +'</span>'
+    +'<div class="pool-inp">'
+    +'<select id="qty_plight" onchange="calc()" style="width:60px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
+    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>'
+    +'</select>'
+    +'</div></div>'
+    // ── Blower ──
+    +'<div class="pool-row">'
+    +'<span class="pool-lbl">Blower Motor'
+    +' <select id="pvolt_blower" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option><option value="120">120V</option>'
+    +'</select>'
+    +'</span>'
+    +'<div class="pool-inp">'+buildMotorSel("va_blower",0,"240")+'</div></div>'
+    // ── Dynamic sections ──
+    +'<div id="pool_pumps_section"></div>'
+    +'<div id="pool_nc_section"></div>';
 }
 
-function addPoolLoad(){
-  var n=++poolExtraCount;
-  var div=document.createElement("div");
-  div.className="pool-row";
-  div.id="pxrow_"+n;
+
+function addPoolPump(){
+  var n=++poolPumpCount;
+  var sec=document.getElementById('pool_pumps_section');
+  var div=document.createElement('div');
+  div.className='pool-row';
+  div.id='ppump_'+n;
   div.innerHTML='<span class="pool-lbl">'
-    +'<input type="text" id="pxname_'+n+'" value="Extra Load '+n+'" style="border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;width:120px;">'
-    +' <select id="pxvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;">'
-    +'<option value="120">120V</option><option value="240" selected>240V</option></select>'
+    +'Pool Pump '+n+' (continuous)'
+    +' <select id="ppvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option><option value="120">120V</option>'
+    +'</select>'
     +'</span>'
-    +'<div class="pool-inp" style="display:flex;align-items:center;gap:4px;">'
-    +'<input type="number" id="pxva_'+n+'" value="0" min="0" oninput="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;text-align:right;width:100px;">'
-    +'<button class="btn btn-remove" onclick="removePoolLoad('+n+')">✕</button>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
+    +buildMotorSel('ppva_'+n,0,'240')
+    +'<button class="btn btn-remove" onclick="removePoolPump('+n+')" style="padding:3px 8px;font-size:11px;">✕</button>'
     +'</div>';
-  document.getElementById("pool_extra_rows").appendChild(div);
+  sec.appendChild(div);
   calc();
 }
-function removePoolLoad(n){var e=document.getElementById("pxrow_"+n);if(e)e.remove();calc();}
+function removePoolPump(n){var e=document.getElementById('ppump_'+n);if(e)e.remove();calc();}
+
+function addPoolNC(){
+  var n=++poolNcCount;
+  var sec=document.getElementById('pool_nc_section');
+  var div=document.createElement('div');
+  div.className='pool-row';
+  div.id='pnc_'+n;
+  div.innerHTML='<span class="pool-lbl">'
+    +'<input type="text" id="pncname_'+n+'" value="Non-continuous Load '+n+'" style="font-size:12px;border:1px solid var(--border);border-radius:4px;padding:4px 7px;width:160px;">'
+    +' <select id="pncvolt_'+n+'" onchange="calc()" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;margin-left:4px;">'
+    +'<option value="240" selected>240V</option><option value="120">120V</option>'
+    +'</select>'
+    +'</span>'
+    +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
+    +buildMotorSel('pncva_'+n,0,'240')
+    +'<button class="btn btn-remove" onclick="removePoolNC('+n+')" style="padding:3px 8px;font-size:11px;">✕</button>'
+    +'</div>';
+  sec.appendChild(div);
+  calc();
+}
+function removePoolNC(n){var e=document.getElementById('pnc_'+n);if(e)e.remove();calc();}
+
+// Legacy — kept so calc() doesn't error on old poolExtraCount references
+function addPoolLoad(){ addPoolNC(); }
+function removePoolLoad(n){ removePoolNC(n); }
 
 
 function buildMotorSel(id, defVA, volt){
@@ -946,18 +983,28 @@ function calc(){
   document.getElementById('r2_note').textContent=totCool>=heatDem?'A/C @ 100%':'Heat @ '+(hf*100)+'%';
 
   // ── Pool panel total VA (from pool tab) ──
-  var pmVA_=gv('va_pm'), pncVA_=gv('va_pnc');
-  var spaQty_=gv('qty_spa'), h35Qty_=gv('qty_ph35'), h5Qty_=gv('qty_ph5');
+  // Spa: qty × 11,000 VA (fixed)
+  var spaQty_=gv('qty_spa');
   var spaVA_=spaQty_*11000;
-  var h35VA_=h35Qty_*gv('va_ph35');
-  var h5VA_=h5Qty_*gv('va_ph5');
+  // Heaters
+  var h35VA_=gv('qty_ph35')*gv('va_ph35');
+  var h5VA_ =gv('qty_ph5')*gv('va_ph5');
   var heaterVA_=h35VA_+h5VA_+spaVA_;
+  // Blower and lights
   var blowerVA_=gv('va_blower');
   var lightVA_=gv('qty_plight')*300;
-  // Pool extra loads
-  for(var n=1;n<=poolExtraCount;n++){
-    if(!document.getElementById('pxrow_'+n)) continue;
-    pncVA_+=gv('pxva_'+n);
+  // Dynamic pool pumps (continuous motors)
+  var pmVA_=0;
+  for(var n=1;n<=poolPumpCount;n++){
+    if(!document.getElementById('ppump_'+n)) continue;
+    pmVA_+=gv('ppva_'+n);
+  }
+  // Dynamic non-continuous loads
+  var pncVA_=0;
+  for(var n=1;n<=poolNcCount;n++){
+    if(!document.getElementById('pnc_'+n)) continue;
+    var pncVolt_=parseInt(gs('pncvolt_'+n))||240;
+    pncVA_+=gv('pncva_'+n);
   }
   // Total pool sub-panel feeder VA = sum of all pool loads
   // Per NEC, the feeder must carry the total demand of the sub-panel
@@ -1012,22 +1059,17 @@ function calc(){
   sv('r4_tot',s4);
 
   // ── Step 5 ──
-  var allGas=gc('gas_all'), rawCook=0;
+  // Step 5: Optional Method — raw VA, no Col C demand factor
+  var allGas=gc('gas_all'), s5=0;
   for(var n=1;n<=ctCount;n++){
     if(!document.getElementById('ci_cooktop_'+n)) continue;
-    if(!allGas&&!gc('gas_cooktop_'+n)) rawCook+=gv('va_cooktop_'+n);
+    if(!allGas&&!gc('gas_cooktop_'+n)) s5+=gv('va_cooktop_'+n);
   }
   for(var n=1;n<=ovCount;n++){
     if(!document.getElementById('ci_oven_'+n)) continue;
-    if(!allGas&&!gc('gas_oven_'+n)) rawCook+=gv('va_oven_'+n);
+    if(!allGas&&!gc('gas_oven_'+n)) s5+=gv('va_oven_'+n);
   }
-  var s5=cookDem(rawCook);
-  sv('r5_raw',rawCook);sv('r5_dem',Math.round(s5));
-  var cookNote_str=cookNote(rawCook);
-  var ccd=document.getElementById('cook_calc_detail');
-  if(ccd) ccd.innerHTML='<div class="calc-line"><span>Raw cooking total</span><span class="cv">'+fmt(rawCook)+' VA</span></div>'
-    +'<div class="calc-line"><span>Col C rule applied</span><span class="cv">'+cookNote_str+'</span></div>'
-    +'<div class="calc-line"><span><strong>Step 5 demand</strong></span><span class="cv"><strong>'+fmt(Math.round(s5))+' VA</strong></span></div>';
+  sv('r5_dem',s5);
 
   // ── NEC 220.82 Optional Method ──
   // Base pool = Step1 + Step3 (raw appliance VA) + Step4 (dryer) + Step5 (cooking)
@@ -1046,6 +1088,15 @@ function calc(){
   var feederWire=svcWire(amps_per,isAl);
   var neutralWire=svcWire(neut_per,isAl);
   var egc=egcWire(svcSize,isAl);
+
+  // ── Parallel conductor warning — NEC 310.10(H) min 1/0 AWG ──
+  var PARALLEL_MIN_ORDER = ['14 AWG','12 AWG','10 AWG','8 AWG','6 AWG','4 AWG',
+    '3 AWG','2 AWG','1 AWG'];  // sizes SMALLER than 1/0 — not permitted in parallel
+  var parallelWarn = document.getElementById('parallel_warn');
+  if(parallelWarn){
+    var isTooSmall = sets>1 && PARALLEL_MIN_ORDER.indexOf(feederWire) !== -1;
+    parallelWarn.style.display = isTooSmall ? 'block' : 'none';
+  }
 
   // Generator
   var fuel=gs('fuel'), kw=svcDem/1000, gen='> 150KW';
@@ -1078,7 +1129,7 @@ function calc(){
     '<div class="calc-line"><span>Step 1 — Lighting/Sm.Appl/Laundry</span><span class="cv">'+fmt(s1)+' VA</span></div>'
     +'<div class="calc-line"><span>Step 3 — Appliances (raw VA, no demand factor)</span><span class="cv">'+fmt(Math.round(appDem))+' VA</span></div>'
     +'<div class="calc-line"><span>Step 4 — Dryer</span><span class="cv">'+fmt(s4)+' VA</span></div>'
-    +'<div class="calc-line"><span>Step 5 — Cooking (Col C)</span><span class="cv">'+fmt(Math.round(s5))+' VA</span></div>'
+    +'<div class="calc-line"><span>Step 5 — Cooking (raw VA)</span><span class="cv">'+fmt(Math.round(s5))+' VA</span></div>'
     +'<div class="calc-line"><span>─── Base pool (Steps 1+3+4+5, raw VA)</span><span class="cv">'+fmt(Math.round(baseLoads))+' VA</span></div>'
     +'<div class="calc-line"><span>First 10,000 VA × 100%</span><span class="cv">'+fmt(d10)+' VA</span></div>'
     +(dRest>0?'<div class="calc-line"><span>Remaining '+fmt(Math.round(dRest))+' VA × 40%</span><span class="cv">'+fmt(Math.round(dRest*0.4))+' VA</span></div>':'')
