@@ -250,7 +250,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
 </div>
 
 <div class="job-banner">
-  <div class="jf"><label>Customer</label><input type="text" id="j_co" value=""></div>
+  <div class="jf"><label>Company</label><input type="text" id="j_co" value=""></div>
   <div class="jf"><label>Address</label><input type="text" id="j_addr" value=""></div>
   <div class="jf"><label>City / State / Zip</label><input type="text" id="j_city" value=""></div>
   <div class="jf"><label>Phone</label><input type="text" id="j_phone" value=""></div>
@@ -656,12 +656,19 @@ var GENS=[['AC 10KW',10,9],['AC 12KW',12,12],['AC 14KW',14,14],['AC 16KW',16,16]
   ['LQ 38KW',38,38],['LQ 40KW',40,40],['LQ 48KW',48,48],['LQ 60KW',60,60],
   ['LQ 80KW',75,80],['LQ 100KW',96,96],['LQ 130KW',130,130],['LQ 150KW',134,144]];
 
-// ── NEC HP motor VA (NEC 430.248 / 430.250 single-phase / three-phase FLA×240V) ──
-// Single-phase 240V: HP -> FLA (NEC Table 430.248) -> VA = FLA×240
-var HP_VA_120 ={'1/6':4.4,'1/4':5.8,'1/3':7.2,'1/2':9.8,'3/4':13.8,'1':16,'1.5':20,'2':24,'3':34,'5':56,'7.5':80,'10':100};
-var HP_VA_240 ={'1/6':2.2,'1/4':2.9,'1/3':3.6,'1/2':4.9,'3/4':6.9,'1':8,'1.5':10,'2':12,'3':17,'5':28,'7.5':40,'10':50};
-// VA = FLA × voltage
-function hpVA(hp,v){var f=v===120?HP_VA_120[hp]:HP_VA_240[hp];return f?f*v:0;}
+// NEC Table 430.248 Single-Phase AC Motors FLA
+// HP_FLA_115 = FLA at 115V (used for 120V circuits)
+// HP_FLA_230 = FLA at 230V (used for 240V circuits)
+// VA = FLA × NEC rated voltage (115V or 230V per NEC 430.248)
+var HP_FLA_115={'1/6':4.4,'1/4':5.8,'1/3':7.2,'1/2':9.8,'3/4':13.8,'1':16,'1.5':20,'2':24,'3':34,'5':56,'7.5':80,'10':100};
+var HP_FLA_230={'1/6':2.2,'1/4':2.9,'1/3':3.6,'1/2':4.9,'3/4':6.9,'1':8,'1.5':10,'2':12,'3':17,'5':28,'7.5':40,'10':50};
+// Keep old names as aliases for compatibility
+var HP_VA_120=HP_FLA_115; var HP_VA_240=HP_FLA_230;
+// VA = FLA × NEC rated voltage (115V for 120V circuits, 230V for 240V circuits)
+function hpVA(hp,v){
+  if(v===120){var f=HP_FLA_115[hp];return f?Math.round(f*115):0;}
+  else{var f=HP_FLA_230[hp];return f?Math.round(f*230):0;}
+}
 
 // ── Helpers ──
 function gv(id){var e=document.getElementById(id);if(!e)return 0;var v=parseFloat(e.value);return isNaN(v)?0:v;}
@@ -1212,23 +1219,25 @@ function calc(){
   }
   // Total pool sub-panel feeder VA = sum of all pool loads
   // Per NEC, the feeder must carry the total demand of the sub-panel
-  // We use the larger of Phase A or B × 240 as the feeder VA
-  // Largest continuous motor @ 125% (NEC 430.24)
-  // Only 240V loads are split 50/50 across phases; 120V loads go to Phase A only
+  // Pool phase currents (raw VA/120, NO 125% multiplier — that's for conductor sizing)
+  // Largest continuous motor calc for conductor sizing only
   var contArr_=[pmVA240_,heaterVA_].filter(function(x){return x>0;});
   var largest_=contArr_.length?Math.max.apply(null,contArr_):0;
   var restCont_=contArr_.reduce(function(a,b){return a+b;},0)-largest_;
-  var contAdj240_=largest_*1.25+restCont_;
-  // Blower voltage
+  var contAdj240_=largest_*1.25+restCont_;  // used for conductor sizing only
   var blowerVolt_=parseInt(gs('pvolt_blower'))||240;
   var blowerPhA_=(blowerVolt_===120)?blowerVA_:(blowerVA_/2);
   var blowerPhB_=(blowerVolt_===120)?0:(blowerVA_/2);
-  // Phase A: half of 240V cont + 120V pump loads + half of 240V NC + all 120V NC + lights
-  var phI_=contAdj240_/2 + pmVA120_*1.25 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_;
-  // Phase B: half of 240V cont + half of 240V NC
-  var phJ_=contAdj240_/2 + blowerPhB_ + pncVA240_/2;
-  var poolPhA_=phI_/120, poolPhB_=phJ_/120;
-  var poolFdrVA=Math.max(poolPhA_,poolPhB_)*240;  // feeder VA for Step 3
+  // Display amps = raw VA/120 (what the panel actually sees)
+  var phI_raw=pmVA240_/2 + pmVA120_ + heaterVA_/2 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_;
+  var phJ_raw=pmVA240_/2 + heaterVA_/2 + blowerPhB_ + pncVA240_/2;
+  var poolPhA_=phI_raw/120, poolPhB_=phJ_raw/120;
+  // Feeder sizing amps = with 125% on largest continuous motor (NEC 430.24)
+  var phI_feeder=contAdj240_/2 + pmVA120_*1.25 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_ + pexVA240_/2 + pexVA120_;
+  var phJ_feeder=contAdj240_/2 + blowerPhB_ + pncVA240_/2 + pexVA240_/2;
+  // phI_feeder = per-phase VA (half of each 240V load)
+  // Full feeder VA = max leg amps × 240V = (max per-phase VA / 120) × 240
+  var poolFdrVA=Math.max(phI_feeder,phJ_feeder)/120*240;  // full 240V feeder VA for Step 3
   var tc_pool=document.getElementById('tot_pool_panel');
   if(tc_pool) tc_pool.textContent=fmt(Math.round(poolFdrVA));
 
@@ -1369,30 +1378,42 @@ function calc(){
     +'<div class="calc-line"><span>EGC (NEC 250.122, OCPD='+svcSize+'A)</span><span class="cv">'+egc+'</span></div>'
     +'<div class="calc-line"><span>Generator kW needed</span><span class="cv">'+kw.toFixed(1)+' kW → '+gen+'</span></div>';
 
-  // ── Pool panel calc ──
+  // ── Pool panel calc (display amps = raw; conductor sizing = with 125%) ──
   var pncVA_total=pncVA_;
-  var phI_=contAdj240_/2 + pmVA120_*1.25 + blowerPhA_ + lightVA_ + pncVA240_/2 + pncVA120_ + pexVA240_/2 + pexVA120_;
-  var phJ_=contAdj240_/2 + blowerPhB_ + pncVA240_/2 + pexVA240_/2;
-  var poolPhA=phI_/120, poolPhB=phJ_/120, poolMax=Math.max(poolPhA,poolPhB);
-  var poolSvc=minSvc(poolMax);
+  // Display Phase A/B = raw load current
+  var phI_=phI_raw + pexVA240_/2 + pexVA120_;
+  var phJ_=phJ_raw + pexVA240_/2;
+  var poolPhA=phI_/120, poolPhB=phJ_/120;
+  // Feeder conductor: sized with 125% on largest continuous (NEC 430.24)
+  var poolFeederMax=Math.max(phI_feeder,phJ_feeder)/120;
+  // Panel breaker: next standard size above display amps
+  var POOL_BREAKERS=[15,20,30,40,50,60,70,80,90,100,110,125,150,175,200,225,250,300,400];
+  var poolMax=Math.max(poolPhA,poolPhB);
+  var poolSvc=POOL_BREAKERS[POOL_BREAKERS.length-1];
+  for(var _i=0;_i<POOL_BREAKERS.length;_i++){if(poolMax<=POOL_BREAKERS[_i]){poolSvc=POOL_BREAKERS[_i];break;}}
   sv('rp_phA',poolPhA.toFixed(2));sv('rp_phB',poolPhB.toFixed(2));
-  sv('rp_wire',poolWire(poolMax,isAl));
+  sv('rp_wire',poolWire(poolFeederMax,isAl));
   document.getElementById('rp_mat').textContent=isAl?'Aluminum':'Copper';
   sv('rp_panel',poolSvc+' A');
   sv('rp_egc',egcWire(poolSvc,isAl));
   var pcd=document.getElementById('pool_calc_detail');
+  // Build readable VA breakdown for pool calc detail
+  var pumpLbl_=(pmVA240_>0?'240V '+fmt(pmVA240_)+'VA':'')+(pmVA120_>0?(pmVA240_>0?', ':'' )+'120V '+fmt(pmVA120_)+'VA':'') || '(none)';
+  var heatLbl_=heaterVA_>0?(fmt(heaterVA_)+' VA'+(gasPh35_||gasPh5_||gasSpa_?' (gas=ctrl)':'')):'(none)';
   if(pcd) pcd.innerHTML=
-    '<div class="calc-line"><span>Pool pump (cont. motor) VA</span><span class="cv">'+fmt(pmVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Heater VA (3.5t'+( gasPh35_?' GAS':'')+'+5t'+(gasPh5_?' GAS':'')+'+spa'+(gasSpa_?' GAS':'')+') </span><span class="cv">'+fmt(heaterVA_)+' VA'+(gasPh35_||gasPh5_||gasSpa_?' (gas=500VA ctrl)':'')+' </span></div>'
-    +'<div class="calc-line"><span>Largest continuous × 125% (NEC 430.24)</span><span class="cv">'+fmt(largest_)+' × 1.25 = '+fmt(largest_*1.25)+'</span></div>'
-    +'<div class="calc-line"><span>Blower VA</span><span class="cv">'+fmt(blowerVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Pool light (120V → Phase A only)</span><span class="cv">'+fmt(lightVA_)+'</span></div>'
-    +'<div class="calc-line"><span>Non-continuous + other loads</span><span class="cv">'+fmt(pncVA_total)+'</span></div>'
-    +'<div class="calc-line"><span>Phase A VA ÷ 120</span><span class="cv">'+fmt(phI_)+' ÷ 120 = '+poolPhA.toFixed(2)+' A</span></div>'
-    +'<div class="calc-line"><span>Phase B VA ÷ 120</span><span class="cv">'+fmt(phJ_)+' ÷ 120 = '+poolPhB.toFixed(2)+' A</span></div>'
-    +'<div class="calc-line"><span>Pool feeder VA in Step 3</span><span class="cv">'+fmt(Math.round(poolFdrVA))+' VA (auto)</span></div>'
-    +'<div class="calc-line"><span>Min. pool feeder wire (NEC 310.16 75°C)</span><span class="cv">'+poolWire(poolMax,isAl)+'</span></div>'
-    +'<div class="calc-line"><span>Pool panel EGC (NEC 250.122)</span><span class="cv">'+egcWire(poolSvc,isAl)+'</span></div>';
+    '<div class="calc-line"><span>Pool Pump(s)</span><span class="cv">'+pumpLbl_+'</span></div>'
+    +'<div class="calc-line"><span>Heater(s)</span><span class="cv">'+heatLbl_+'</span></div>'
+    +'<div class="calc-line"><span>Blower</span><span class="cv">'+fmt(blowerVA_)+' VA</span></div>'
+    +'<div class="calc-line"><span>Pool Light(s) — 120V, Phase A only</span><span class="cv">'+fmt(lightVA_)+' VA</span></div>'
+    +(pncVA_total>0?'<div class="calc-line"><span>Non-continuous loads</span><span class="cv">'+fmt(pncVA_total)+' VA</span></div>':'')
+    +'<div class="calc-line" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;"><span>Largest continuous (NEC 430.24)</span><span class="cv">'+fmt(largest_)+' × 1.25 = '+fmt(largest_*1.25)+' VA</span></div>'
+    +'<div class="calc-line"><span><strong>Phase A load (display)</strong></span><span class="cv"><strong>'+fmt(phI_)+' VA ÷ 120 = '+poolPhA.toFixed(2)+' A</strong></span></div>'
+    +'<div class="calc-line"><span><strong>Phase B load (display)</strong></span><span class="cv"><strong>'+fmt(phJ_)+' VA ÷ 120 = '+poolPhB.toFixed(2)+' A</strong></span></div>'
+    +'<div class="calc-line"><span>Feeder sizing amps (w/ 125%)</span><span class="cv">'+poolFeederMax.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Min. feeder wire (NEC 310.16 75°C)</span><span class="cv">'+poolWire(poolFeederMax,isAl)+'</span></div>'
+    +'<div class="calc-line"><span>Min. panel breaker</span><span class="cv">'+poolSvc+' A</span></div>'
+    +'<div class="calc-line"><span>Pool EGC (NEC 250.122)</span><span class="cv">'+egcWire(poolSvc,isAl)+'</span></div>'
+    +'<div class="calc-line"><span>Pool feeder VA → Step 3</span><span class="cv">'+fmt(Math.round(poolFdrVA))+' VA</span></div>';
 }
 
 // ══ TABS ══
