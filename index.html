@@ -319,6 +319,12 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
             <option value="2">2 Sets</option>
             <option value="3">3 Sets</option>
             <option value="4">4 Sets</option>
+            <option value="5">5 Sets</option>
+            <option value="6">6 Sets</option>
+            <option value="7">7 Sets</option>
+            <option value="8">8 Sets</option>
+            <option value="9">9 Sets</option>
+            <option value="10">10 Sets</option>
           </select>
           <div id="parallel_warn" style="display:none;margin-top:6px;background:#fff3cd;border:1px solid #f0a500;border-left:4px solid #f0a500;border-radius:4px;padding:7px 10px;font-size:11px;color:#7a4f00;line-height:1.5;">
             ⚠️ <strong>NEC 310.10(H):</strong> Conductors smaller than 1/0 AWG cannot be paralleled. Increase sets or select a larger single conductor.
@@ -1719,6 +1725,29 @@ function printReport(){
     var cuv=parseInt(cus.value)||0, shv=parseInt(shs.value)||0;
     if(cuv||shv) hvacLines.push({name:'AHU '+i, cu:cuv, sh:shv});
   }
+
+  // ── Pool Equipment — managed loads ──
+  if(typeof poolPumpCount!=='undefined'){
+    for(var n=1;n<=poolPumpCount;n++){
+      var ppEl=document.getElementById('ppva_'+n);
+      if(ppEl&&ppEl.value==='managed') managedLines.push({name:'Pool Pump '+n, reason:'Pool Equipment'});
+    }
+  }
+  if(typeof poolNcCount!=='undefined'){
+    for(var n=1;n<=poolNcCount;n++){
+      var pncEl=document.getElementById('pncva_'+n);
+      if(pncEl&&pncEl.value==='managed'){
+        var pncNameEl=document.getElementById('pncname_'+n);
+        managedLines.push({name:(pncNameEl?pncNameEl.value||'NC Load '+n:'NC Load '+n), reason:'Pool Non-Continuous'});
+      }
+    }
+  }
+  var ph35El=document.getElementById('va_ph35');
+  if(ph35El&&ph35El.value==='managed') managedLines.push({name:'Pool Heater 3.5 Ton HP', reason:'Pool Equipment'});
+  var ph5El=document.getElementById('va_ph5');
+  if(ph5El&&ph5El.value==='managed') managedLines.push({name:'Pool Heater 5 Ton HP', reason:'Pool Equipment'});
+  var blowerEl=document.getElementById('va_blower');
+  if(blowerEl&&blowerEl.value==='managed') managedLines.push({name:'Pool Blower', reason:'Pool Equipment'});
 
   // ── Summary values ──
   var s1=tv('r1_tot'), s2=tv('r2_s2')+' '+tv('r2_note');
