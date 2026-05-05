@@ -1820,22 +1820,12 @@ function printReport(){
   );
   printWin.document.close();
   // Wait for fonts/images then print
-  printWin.onload = function(){
-    setTimeout(function(){
-      printWin.focus();
-      printWin.print();
-      setTimeout(function(){ printWin.close(); }, 1000);
-    }, 400);
-  };
-  // Fallback if onload doesn't fire (Safari)
-  setTimeout(function(){
-    if(!printWin.closed){
-      printWin.focus();
-      printWin.print();
-      setTimeout(function(){ printWin.close(); }, 1000);
-    }
-  }, 800);
-}
-</script>
-</body>
-</html>
+  var _printed = false;
+  function _doPrint(){
+    if(_printed) return;
+    _printed = true;
+    printWin.focus();
+    // Close window after print dialog is dismissed (afterprint fires on all modern browsers)
+    printWin.addEventListener('afterprint', function(){ printWin.close(); });
+    // Fallback: if afterprint never fires (older Safari), close after 30s
+    var _fallbackClose = setTimeout(function(){ if(!printWin.closed
