@@ -110,7 +110,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
 .sum-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
 @media(min-width:500px){.sum-chips{grid-template-columns:repeat(3,1fr);}}
 @media(min-width:700px){.sum-chips{grid-template-columns:repeat(4,1fr);}}
-.sc{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:10px 12px;}
+.sc{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:10px 12px;overflow:hidden;min-width:0;}
 .sc .sl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;opacity:.65;}
 .sc .sv{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;margin-top:2px;line-height:1.1;word-break:break-all;}
 .sc .su{font-size:10px;opacity:.55;margin-top:1px;}
@@ -306,8 +306,8 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
         <div class="field">
           <label>Feeder Table</label>
           <select id="feeder_table" onchange="calc()">
-            <option value="310_12" selected>NEC 310.12 — 83% (1&amp;2 Family)</option>
-            <option value="310_16">NEC 310.16 — 75°C Standard</option>
+            <option value="310_12">NEC 310.12 — 83% (1&amp;2 Family)</option>
+            <option value="310_16" selected>NEC 310.16 — 75°C Standard</option>
           </select>
           <div id="feeder_table_note" style="font-size:10px;color:var(--text3);margin-top:3px;">
             310.12 applies to 100A–400A services only
@@ -1210,13 +1210,17 @@ function calc(){
   // NEC 220.82(C): heat element × factor (65% for ≤4 units, 40% for >4) + blower @ 100%
   // Cooling: CU/HP load + blower @ 100%
   // Step 2 = MAX(heatDemand, coolDemand)
+  // If either CU or SH on an AHU is Managed, the entire AHU is excluded from demand
   var totCU=0, totHeatElement=0, totBlower=0, nUnits=0;
   for(var i=1;i<=MAX_AHU;i++){
+    var cuEl_=document.getElementById('cu'+i);
+    var shEl_=document.getElementById('sh'+i);
+    if(!cuEl_||!shEl_) continue;
+    if(cuEl_.value==='managed'||shEl_.value==='managed') continue;
     var cuVal=gv('cu'+i);
     var shTotal=gv('sh'+i);
     if(cuVal>0||shTotal>0) nUnits++;
     totCU+=cuVal;
-    // Find matching SH_OPT to split heat element from blower
     var heatEl=0, blowerEl=0;
     for(var k=0;k<SH_OPTS.length;k++){
       if(SH_OPTS[k][0]===shTotal){ heatEl=SH_OPTS[k][1]; blowerEl=SH_OPTS[k][2]; break; }
@@ -1472,7 +1476,18 @@ function calc(){
   } else {
     tblSuffix=' (NEC 310.16)';
   }
-  sv('s_feed',feederWire+(sets>1?' ×'+sets:'')+tblSuffix);
+  var feedStr=feederWire+(sets>1?' ×'+sets:'')+tblSuffix;
+  sv('s_feed',feedStr);
+  // Auto-scale font so feeder fits on one line
+  var sfEl=document.getElementById('s_feed');
+  if(sfEl){
+    sfEl.style.fontSize='13px';
+    sfEl.style.whiteSpace='nowrap';
+    sfEl.style.overflow='hidden';
+    sfEl.style.textOverflow='ellipsis';
+    sfEl.style.display='block';
+    sfEl.style.maxWidth='100%';
+  }
   // Parallel requirement note: if single-set and conductor maxes out table
   var parallelNote=document.getElementById('parallel_note');
   if(parallelNote){
