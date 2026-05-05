@@ -721,20 +721,21 @@ function hpVA(hp,v){
 }
 
 // ── Helpers ──
-function gv(id){var e=document.getElementById(id);if(!e)return 0;var v=parseFloat(e.value);return isNaN(v)?0:v;}
+function gv(id){var e=document.getElementById(id);if(!e)return 0;if(e.value==='managed')return 0;var v=parseFloat(e.value);return isNaN(v)?0:v;}
 function gc(id){var e=document.getElementById(id);return e&&e.checked;}
 function gs(id){var e=document.getElementById(id);return e?e.value:'';}
 function sv(id,v){var e=document.getElementById(id);if(!e)return;e.textContent=(typeof v==='number')?fmt(v):v;}
 function fmt(n,dec){if(dec)return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});return Math.round(n).toLocaleString('en-US');}
 
 // ══ STATIC DATA ══
-var CU_OPTS=[[0,'— none —'],[1840,'1 ton (1,840)'],[2200,'1.5 ton (2,200)'],[2850,'2 ton (2,850)'],
+var CU_OPTS=[[0,'— None —'],['managed','Managed — 0 VA'],[1840,'1 ton (1,840)'],[2200,'1.5 ton (2,200)'],[2850,'2 ton (2,850)'],
   [3600,'2.5 ton (3,600)'],[4275,'3 ton (4,275)'],[5000,'3.5 ton (5,000)'],[5700,'4 ton (5,700)'],
   [7130,'5 ton (7,130)'],[1295,'Mini Split DP20'],[1887,'Mini Split DP25'],[2047,'Mini Split DP30']];
 // SH_OPTS: [total_VA, heat_element_VA, blower_VA, label]
 // Blower is always at 100%; only heat_element gets the demand factor
 var SH_OPTS=[
   [0,    0,     0,    '— None (0 VA) —'],
+  ['managed', 0, 0, 'Managed — 0 VA'],
   [5800, 5000,  800,  '5 kW + 800 blwr = 5,800'],
   [8300, 7500,  800,  '7.5 kW + 800 blwr = 8,300'],
   [8800, 8000,  800,  '8 kW + 800 blwr = 8,800'],
@@ -794,11 +795,13 @@ function buildAHU(){
     var cu='',sh='';
     for(var j=0;j<CU_OPTS.length;j++){
       var s=(i===0&&CU_OPTS[j][0]===4275)||(i!==0&&CU_OPTS[j][0]===0)?' selected':'';
-      cu+='<option value="'+CU_OPTS[j][0]+'"'+s+'>'+CU_OPTS[j][1]+'</option>';
+      var cuVal=(CU_OPTS[j][0]==='managed')?'managed':CU_OPTS[j][0];
+      cu+='<option value="'+cuVal+'"'+s+'>'+CU_OPTS[j][1]+'</option>';
     }
     for(var j=0;j<SH_OPTS.length;j++){
       var s=(i===0&&SH_OPTS[j][0]===8800)||(i!==0&&SH_OPTS[j][0]===0)?' selected':'';
-      sh+='<option value="'+SH_OPTS[j][0]+'"'+s+'>'+SH_OPTS[j][3]+'</option>';
+      var shVal=(SH_OPTS[j][0]==='managed'||SH_OPTS[j][0]===0)&&SH_OPTS[j][3].indexOf('Managed')>=0?'managed':SH_OPTS[j][0];
+      sh+='<option value="'+shVal+'"'+s+'>'+SH_OPTS[j][3]+'</option>';
     }
     h+='<div class="ahu-row"><span class="ahu-lbl">AHU '+(i+1)+'</span>'
       +'<select id="cu'+(i+1)+'" onchange="calc()" style="background:#EEF2FF">'+cu+'</select>'
@@ -809,7 +812,6 @@ function buildAHU(){
 }
 
 function makeVAcell(id, a, customId){
-  // combo: select from list OR type custom
   var sel='<select id="'+id+'" onchange="vaSelChange(\''+id+'\',\''+customId+'\')" style="font-size:12px;">';
   if(a.isMotor){
     for(var i=0;i<MOTOR_OPTS.length;i++){
@@ -819,12 +821,14 @@ function makeVAcell(id, a, customId){
       var s=(mo.hp!=='custom'&&Math.round(va240)===a.va)?' selected':'';
       if(mo.hp==='custom') s=a.va===0?' selected':'';
       sel+='<option value="'+(mo.hp==='custom'?'custom':va240)+'"'+s+'>'+lbl+'</option>';
+      if(i===0) sel+='<option value="managed">Managed — 0 VA</option>';
     }
   } else {
     sel+='<option value="custom">— type custom VA —</option>';
+    sel+='<option value="managed">Managed — 0 VA</option>';
     for(var j=0;j<a.vaOpts.length;j++){
       var s=a.vaOpts[j]===a.va?' selected':'';
-      var lbl=a.vaOpts[j]===0?'0 — Gas/None':a.vaOpts[j].toLocaleString()+' VA';
+      var lbl=a.vaOpts[j]===0?'None — 0 VA':a.vaOpts[j].toLocaleString()+' VA';
       sel+='<option value="'+a.vaOpts[j]+'"'+s+'>'+lbl+'</option>';
     }
   }
@@ -835,7 +839,9 @@ function makeVAcell(id, a, customId){
 
 function vaSelChange(selId, custId){
   var v=document.getElementById(selId).value;
-  if(v!=='custom'){
+  if(v==='managed'){
+    document.getElementById(custId).value='0';
+  } else if(v!=='custom'){
     document.getElementById(custId).value=v;
   }
   calc();
@@ -905,7 +911,9 @@ function addDryer(isGas, va, qty){
     +'<button class="btn btn-remove" onclick="removeDryer('+n+')">Remove</button>'
     +'</div>'
     +'<label class="chk-row" style="margin-bottom:8px;">'
-    +'<input type="checkbox" id="gas_dry'+n+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas Dryer — adds 250 VA (ignition control)</span></label>'
+    +'<input type="checkbox" id="gas_dry'+n+'" onchange="calc()"'+(isGas?' checked':'')+'>  <span>Gas Dryer (250 VA ctrl)</span></label>'
+    +'<label class="chk-row">'
+    +'<input type="checkbox" id="mgd_dry'+n+'" onchange="calc()">  <span>Managed — 0 VA</span></label>'
     +'<div class="fg fg-2">'
     +'<div class="field"><label>Quantity</label><input type="number" id="qty_dry'+n+'" value="'+(qty||1)+'" min="0" oninput="calc()"></div>'
     +'<div class="field"><label>VA (type or select)</label>'
@@ -939,7 +947,7 @@ function addCookItem(type, isGas, va){
   div.id='ci_'+cid;
   var label=(type==='cooktop'?'Cooktop':'Oven / Range')+' '+n;
   // Build wattage select 5000-12500 in 500 steps + 0 + custom
-  var opts='<option value="0"'+(va===0?' selected':'')+'>— None (0 VA)</option>';
+  var opts='<option value="0"'+(va===0?' selected':'')+'>None (0 VA)</option><option value="managed">Managed — 0 VA</option>';
   for(var w=5000;w<=12500;w+=500){
     var s=(va===w)?' selected':'';
     opts+='<option value="'+w+'"'+s+'>'+(w/1000).toFixed(1)+' kW ('+w.toLocaleString()+' VA)</option>';
@@ -962,7 +970,9 @@ function addCookItem(type, isGas, va){
 }
 function cookSelChange(cid){
   var v=document.getElementById('sel_'+cid).value;
-  if(v!=='custom'){
+  if(v==='managed'){
+    document.getElementById('va_'+cid).value='0';
+  } else if(v!=='custom'){
     document.getElementById('va_'+cid).value=(v==='0'?0:v);
   }
   calc();
@@ -1159,7 +1169,7 @@ function updateMotorVolt(selId, newVolt){
   if(!sel) return;
   var oldVA=parseFloat(sel.value)||0;
   var v=parseInt(newVolt)||240;
-  var html='<option value="0">— None (0 VA) —</option>';
+  var html='<option value="0">— None —</option><option value="managed">Managed — 0 VA</option>';
   for(var i=1;i<MOTOR_OPTS.length;i++){
     var mo=MOTOR_OPTS[i];
     var va=hpVA(mo.hp,v);
@@ -1173,7 +1183,7 @@ function updateMotorVolt(selId, newVolt){
 
 function buildMotorSel(id, defVA, volt){
   var s='<select id="'+id+'" onchange="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:5px 6px;font-size:11px;background:#fff;width:100%;">';
-  s+='<option value="0">— None (0 VA) —</option>';
+  s+='<option value="0">— None —</option><option value="managed">Managed — 0 VA</option>';
   for(var i=1;i<MOTOR_OPTS.length;i++){
     var mo=MOTOR_OPTS[i];
     var va=hpVA(mo.hp, parseInt(volt)||240);
@@ -1324,8 +1334,10 @@ function calc(){
   var s4=0;
   for(var n=1;n<=dryerCount;n++){
     if(!document.getElementById('dryer_'+n)) continue;
-    if(gc('gas_dry'+n)){
-      s4+=gv('qty_dry'+n)*250;  // gas dryer: 250 VA ignition/control per unit
+    if(gc('mgd_dry'+n)){
+      // Managed: zero out (load is managed, excluded from calc)
+    } else if(gc('gas_dry'+n)){
+      s4+=gv('qty_dry'+n)*250;  // gas dryer: 250 VA ignition/control
     } else {
       s4+=gv('qty_dry'+n)*gv('va_dry'+n);
     }
@@ -1374,10 +1386,12 @@ function calc(){
   var neutralDryerVA=0;
   for(var n=1;n<=dryerCount;n++){
     if(!document.getElementById('dryer_'+n)) continue;
-    if(gc('gas_dry'+n)){
-      neutralDryerVA+=gv('qty_dry'+n)*250;  // gas dryer: 120V control load @ 100%
+    if(gc('mgd_dry'+n)){
+      // Managed: excluded from neutral too
+    } else if(gc('gas_dry'+n)){
+      neutralDryerVA+=gv('qty_dry'+n)*250;
     } else {
-      neutralDryerVA+=gv('qty_dry'+n)*gv('va_dry'+n)*0.70;  // electric: 70% per NEC 220.61(B)(2)
+      neutralDryerVA+=gv('qty_dry'+n)*gv('va_dry'+n)*0.70;
     }
   }
   // Cooking: NEC 220.61(B)(2) explicitly permits 70% of cooking demand for neutral sizing
@@ -1806,6 +1820,7 @@ function printReport(){
     }, 1500);
     return;
   }
+  // Embed afterprint listener + auto-print inside the new window itself
   printWin.document.write(
     '<!DOCTYPE html><html><head>'
     +'<meta charset="UTF-8">'
@@ -1822,26 +1837,16 @@ function printReport(){
     +'  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
     +'}'
     +'</style>'
+    +'<script>'
+    +'window.onafterprint=function(){window.close();};'
+    +'window.addEventListener(\'afterprint\',function(){window.close();});'
+    +'window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};'
+    +'<\/script>'
     +'</head><body>'
     +html
     +'</body></html>'
   );
   printWin.document.close();
-  // Wait for fonts/images then print
-  var _printed = false;
-  function _doPrint(){
-    if(_printed) return;
-    _printed = true;
-    printWin.focus();
-    // Close window after print dialog is dismissed (afterprint fires on all modern browsers)
-    printWin.addEventListener('afterprint', function(){ printWin.close(); });
-    // Fallback: if afterprint never fires (older Safari), close after 30s
-    var _fallbackClose = setTimeout(function(){ if(!printWin.closed) printWin.close(); }, 30000);
-    printWin.print();
-  }
-  // Try onload first, then setTimeout fallback for Safari
-  printWin.onload = function(){ setTimeout(_doPrint, 350); };
-  setTimeout(function(){ if(!_printed) _doPrint(); }, 800);
   } catch(e){ console.error('printReport error:', e); alert('Report error: '+e.message); }
 }
 </script>
