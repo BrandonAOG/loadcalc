@@ -1597,6 +1597,13 @@ function iv(id){
 }
 
 function printReport(){
+  try{
+  // Ensure globals exist
+  if(typeof dryerCount==='undefined') dryerCount=0;
+  if(typeof ctCount==='undefined') ctCount=0;
+  if(typeof ovCount==='undefined') ovCount=0;
+  if(typeof MAX_AHU==='undefined') MAX_AHU=10;
+  console.log('printReport called, dryerCount='+dryerCount+' ctCount='+ctCount+' ovCount='+ovCount);
   // ── Collect job info ──
   var co    = iv('j_co');
   var addr  = iv('j_addr');
@@ -1671,9 +1678,10 @@ function printReport(){
   var s1=tv('r1_tot'), s2=tv('r2_s2')+' '+tv('r2_note');
   var s3=tv('r3_tot'), s4=tv('r4_tot'), s5=tv('r5_dem');
   var baseDemStr=document.getElementById('br_dem')?document.getElementById('br_dem').textContent:'—';
-  var svcDem=tv('s_dem'), amps=tv('s_amps'), minSvc=tv('s_svc');
+  var svcDem=tv('s_dem'), rAmps=tv('s_amps'), rMinSvc=tv('s_svc');
   var neutral=tv('s_neut'), feeder=tv('s_feed'), nwire=tv('s_nwire');
-  var egc=tv('s_egc'), gen=tv('s_gen'), fuel=tv('s_fuel');
+  var egc=tv('s_egc'), gen=tv('s_gen');
+  var fuel=document.getElementById('fuel')?document.getElementById('fuel').value:'';
   var mat=document.getElementById('s_mat')?document.getElementById('s_mat').textContent:'—';
 
   // ── Pool ──
@@ -1740,8 +1748,8 @@ function printReport(){
       <tr><td>Demand (first 10k@100%, rest@40%)</td><td class="r">—</td></tr>
       <tr><td>+ HVAC @ 100%</td><td class="r">+ ${tv('r2_s2')} VA</td></tr>
       <tr class="tot"><td>Service Demand</td><td class="r">${svcDem} VA</td></tr>
-      <tr><td>Demand @ 240V, 1φ</td><td class="r">${amps} A</td></tr>
-      <tr><td>Minimum Service Size</td><td class="r">${minSvc} A</td></tr>
+      <tr><td>Demand @ 240V, 1φ</td><td class="r">${rAmps} A</td></tr>
+      <tr><td>Minimum Service Size</td><td class="r">${rMinSvc} A</td></tr>
       <tr><td>Neutral Demand (NEC 220.61)</td><td class="r">${neutral} A</td></tr>
     </table>
 
@@ -1828,4 +1836,14 @@ function printReport(){
     // Close window after print dialog is dismissed (afterprint fires on all modern browsers)
     printWin.addEventListener('afterprint', function(){ printWin.close(); });
     // Fallback: if afterprint never fires (older Safari), close after 30s
-    var _fallbackClose = setTimeout(function(){ if(!printWin.closed
+    var _fallbackClose = setTimeout(function(){ if(!printWin.closed) printWin.close(); }, 30000);
+    printWin.print();
+  }
+  // Try onload first, then setTimeout fallback for Safari
+  printWin.onload = function(){ setTimeout(_doPrint, 350); };
+  setTimeout(function(){ if(!_printed) _doPrint(); }, 800);
+  } catch(e){ console.error('printReport error:', e); alert('Report error: '+e.message); }
+}
+</script>
+</body>
+</html>
