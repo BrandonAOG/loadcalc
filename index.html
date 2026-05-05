@@ -1624,20 +1624,27 @@ function printReport(){
   var city  = iv('j_city');
   var phone = iv('j_phone');
 
+  // ── Collect managed loads list ──
+  var managedLines = [];
+
   // ── Collect appliance rows ──
   var applLines = [];
   var rows = document.querySelectorAll('#appl_rows tr');
   rows.forEach(function(tr){
     var nameEl = tr.querySelector('input[type=text]');
-    var qtyEl  = tr.querySelector('input[type=number]');
     var totEl  = tr.querySelector('.tot-cell');
     if(!nameEl || !totEl) return;
     var name = nameEl.value||'';
-    var tot  = (totEl.textContent||'').trim();
+    // Check if VA select is managed
+    var selEl = tr.querySelector('select');
+    if(selEl && selEl.value==='managed'){
+      managedLines.push({name:name, reason:'Appliance'});
+      return;
+    }
+    var tot = (totEl.textContent||'').trim();
     if(tot==='—'||tot==='0'||!tot) return;
     applLines.push({name:name, tot:tot});
   });
-  // Pool panel row
   var pp = document.getElementById('tot_pool_panel');
   if(pp && pp.textContent && pp.textContent!=='—')
     applLines.push({name:'Pool Equip. Panel', tot:pp.textContent.trim()});
@@ -1647,10 +1654,12 @@ function printReport(){
   for(var n=1;n<=dryerCount;n++){
     var dr = document.getElementById('dryer_'+n);
     if(!dr) continue;
+    var mgd = document.getElementById('mgd_dry'+n);
     var gas = document.getElementById('gas_dry'+n);
     var qty = document.getElementById('qty_dry'+n);
     var va  = document.getElementById('va_dry'+n);
     if(!qty||!va) continue;
+    if(mgd&&mgd.checked){ managedLines.push({name:'Dryer #'+n, reason:'Dryer'}); continue; }
     var label = (gas&&gas.checked)?'Gas Dryer (250VA ctrl)':'Electric Dryer';
     var val   = (gas&&gas.checked)
       ? (parseInt(qty.value)||1)*250
@@ -1662,16 +1671,20 @@ function printReport(){
   var cookLines = [];
   for(var n=1;n<=ctCount;n++){
     var ci=document.getElementById('ci_cooktop_'+n); if(!ci) continue;
+    var selck=document.getElementById('sel_cooktop_'+n);
     var gasck=document.getElementById('gas_cooktop_'+n);
     var vael=document.getElementById('va_cooktop_'+n);
+    if(selck&&selck.value==='managed'){ managedLines.push({name:'Cooktop #'+n, reason:'Cooking'}); continue; }
     var isgas=gasck&&gasck.checked;
     var val=isgas?150:(parseInt(vael&&vael.value)||0);
     if(val) cookLines.push({name:'Cooktop '+(isgas?'(gas 150VA)':'electric'), tot:val.toLocaleString()});
   }
   for(var n=1;n<=ovCount;n++){
     var ci=document.getElementById('ci_oven_'+n); if(!ci) continue;
+    var selck=document.getElementById('sel_oven_'+n);
     var gasck=document.getElementById('gas_oven_'+n);
     var vael=document.getElementById('va_oven_'+n);
+    if(selck&&selck.value==='managed'){ managedLines.push({name:'Oven/Range #'+n, reason:'Cooking'}); continue; }
     var isgas=gasck&&gasck.checked;
     var val=isgas?500:(parseInt(vael&&vael.value)||0);
     if(val) cookLines.push({name:'Oven/Range '+(isgas?'(gas 500VA)':'electric'), tot:val.toLocaleString()});
@@ -1679,11 +1692,15 @@ function printReport(){
 
   // ── HVAC ──
   var hvacLines=[];
-  var cu_labels=['1 ton','1.5 ton','2 ton','2.5 ton','3 ton','3.5 ton','4 ton','5 ton'];
   for(var i=1;i<=MAX_AHU;i++){
     var cus=document.getElementById('cu'+i);
     var shs=document.getElementById('sh'+i);
     if(!cus||!shs) continue;
+    var cuManaged=cus.value==='managed', shManaged=shs.value==='managed';
+    if(cuManaged||shManaged){
+      managedLines.push({name:'AHU '+i, reason:'HVAC'+(cuManaged?' CU':'')+(shManaged?' Heat':'')});
+      continue;
+    }
     var cuv=parseInt(cus.value)||0, shv=parseInt(shs.value)||0;
     if(cuv||shv) hvacLines.push({name:'AHU '+i, cu:cuv, sh:shv});
   }
@@ -1790,6 +1807,7 @@ function printReport(){
   </div>
 </div>
 
+${managedLines.length>0?'<div style="margin-top:10pt;border:1.5pt solid #D97706;border-radius:4pt;padding:7pt 10pt;"><div style="font-family:Orbitron,monospace;font-size:7.5pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D97706;border-bottom:1pt solid #D97706;padding-bottom:3pt;margin-bottom:5pt;">Managed Loads — Excluded from Generator Demand</div><table style="width:100%;border-collapse:collapse;font-size:8.5pt;"><tr style="background:#fff8ed;"><th style="text-align:left;padding:2pt 6pt;font-size:7.5pt;color:#555;">Load Name</th><th style="text-align:left;padding:2pt 6pt;font-size:7.5pt;color:#555;">Category</th><th style="text-align:left;padding:2pt 6pt;font-size:7.5pt;color:#555;">Note</th></tr>'+managedLines.map(function(m){return '<tr><td style="padding:2pt 6pt;border-bottom:0.5pt solid #f0e8d8;">'+m.name+'</td><td style="padding:2pt 6pt;border-bottom:0.5pt solid #f0e8d8;color:#777;">'+m.reason+'</td><td style="padding:2pt 6pt;border-bottom:0.5pt solid #f0e8d8;color:#aaa;font-size:7.5pt;">Load on panel, excluded from generator demand</td></tr>';}).join('')+'</table></div>':''}
 <div style="border-top:1pt solid #ccc;padding-top:5pt;font-size:7pt;color:#888;display:flex;justify-content:space-between;">
   <span>Generated by Always On Generators Load Calc · NEC 2020 · Art. 220.82 Optional Method</span>
   <span>${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</span>
