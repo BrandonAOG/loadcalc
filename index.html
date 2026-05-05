@@ -1784,14 +1784,57 @@ function printReport(){
   .dt .tot td{font-weight:700;border-top:1pt solid #ccc;border-bottom:1pt solid #ccc;background:#fafafa;}
 </style>`;
 
-  var div = document.getElementById('print-report');
-  div.innerHTML = html;
-  document.body.classList.add('printing-report');
-  window.print();
+  // Open a new window with just the report — reliable in Safari, iOS, and all browsers
+  var printWin = window.open('', '_blank', 'width=900,height=700');
+  if(!printWin){
+    // Popup blocked — fall back to inline print
+    var div = document.getElementById('print-report');
+    div.innerHTML = html;
+    document.body.classList.add('printing-report');
+    window.print();
+    setTimeout(function(){
+      document.body.classList.remove('printing-report');
+      div.innerHTML='';
+    }, 1500);
+    return;
+  }
+  printWin.document.write(
+    '<!DOCTYPE html><html><head>'
+    +'<meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>AOG Load Calculation Report</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">'
+    +'<style>'
+    +'*{box-sizing:border-box;margin:0;padding:0;}'
+    +'body{font-family:\'Share Tech Mono\',monospace;font-size:9.5pt;color:#000;background:#fff;'
+    +'  width:8.5in;margin:0 auto;padding:.35in .4in .3in .4in;}'
+    +'@media print{'
+    +'  @page{size:8.5in 11in;margin:0;}'
+    +'  body{width:8.5in;padding:.35in .4in .3in .4in;}'
+    +'  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+    +'}'
+    +'</style>'
+    +'</head><body>'
+    +html
+    +'</body></html>'
+  );
+  printWin.document.close();
+  // Wait for fonts/images then print
+  printWin.onload = function(){
+    setTimeout(function(){
+      printWin.focus();
+      printWin.print();
+      setTimeout(function(){ printWin.close(); }, 1000);
+    }, 400);
+  };
+  // Fallback if onload doesn't fire (Safari)
   setTimeout(function(){
-    document.body.classList.remove('printing-report');
-    div.innerHTML='';
-  }, 1500);
+    if(!printWin.closed){
+      printWin.focus();
+      printWin.print();
+      setTimeout(function(){ printWin.close(); }, 1000);
+    }
+  }, 800);
 }
 </script>
 </body>
