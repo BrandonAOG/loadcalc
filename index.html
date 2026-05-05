@@ -281,6 +281,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       <div class="sc"><div class="sl">Min. Service</div><div class="sv" id="s_svc">—</div><div class="su">Amperes</div></div>
       <div class="sc"><div class="sl">Neutral Demand</div><div class="sv" id="s_neut">—</div><div class="su">Amperes</div></div>
       <div class="sc"><div class="sl">Feeder</div><div class="sv" id="s_feed">—</div><div class="su" id="s_mat">Copper</div></div>
+      <div id="parallel_note" style="display:none;grid-column:1/-1;background:#fff3cd;border:1px solid #f0a500;border-left:4px solid #D97706;border-radius:4px;padding:8px 12px;font-size:11px;color:#7a4f00;line-height:1.5;"></div>
       <div class="sc"><div class="sl">Neutral Wire</div><div class="sv" id="s_nwire">—</div><div class="su">Conductor</div></div>
       <div class="sc"><div class="sl">EGC</div><div class="sv" id="s_egc">—</div><div class="su">NEC 250.122</div></div>
     </div>
@@ -301,6 +302,16 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
             <option value="cu" selected>Copper</option>
             <option value="al">Aluminum</option>
           </select>
+        </div>
+        <div class="field">
+          <label>Feeder Table</label>
+          <select id="feeder_table" onchange="calc()">
+            <option value="310_12" selected>NEC 310.12 — 83% (1&amp;2 Family)</option>
+            <option value="310_16">NEC 310.16 — 75°C Standard</option>
+          </select>
+          <div id="feeder_table_note" style="font-size:10px;color:var(--text3);margin-top:3px;">
+            310.12 applies to 100A–400A services only
+          </div>
         </div>
         <div class="field"><label>Feeder Sets</label>
           <select id="sets" onchange="calc()">
@@ -563,7 +574,7 @@ body{font-family:'Exo 2','Inter',sans-serif;background:var(--bg);color:var(--tex
       </div>
       <div class="help-sec">
         <h3>Conductor Sizing</h3>
-        <p>Copper and Aluminum sizes are from <strong>NEC Table 310.16, 75°C column</strong> — the standard column used for most dwelling services. Aluminum is code-compliant and common for service entrance conductors. The EGC is sized per <strong>NEC Table 250.122</strong> based on the OCPD rating of the circuit it protects.</p>
+        <p>Choose the feeder sizing table in Configuration. <strong>NEC 310.12</strong> applies to 1&amp;2 family dwelling services rated 100A–400A (uses the 83% loading column). <strong>NEC 310.16 (75°C)</strong> is the standard ampacity table used for all other feeders and branch circuits. The neutral is always sized from 310.16. Aluminum is code-compliant and common for service entrance conductors. The EGC is sized per <strong>NEC Table 250.122</strong> based on the OCPD rating of the circuit it protects.</p>
         <div class="hnote">Feeder sets reduce the per-conductor ampacity required — e.g., 2 sets of conductors each carry half the load.</div>
       </div>
       <div class="help-sec">
@@ -591,7 +602,8 @@ var CU75=[
   [100,'3 AWG'],[115,'2 AWG'],[130,'1 AWG'],[150,'1/0 AWG'],[175,'2/0 AWG'],
   [200,'3/0 AWG'],[230,'4/0 AWG'],[255,'250 MCM'],[285,'300 MCM'],
   [310,'350 MCM'],[335,'400 MCM'],[380,'500 MCM'],[420,'600 MCM'],
-  [460,'700 MCM'],[475,'750 MCM'],[490,'800 MCM'],[520,'900 MCM'],[545,'1000 MCM']
+  [460,'700 MCM'],[475,'750 MCM'],[490,'800 MCM'],[520,'900 MCM'],[545,'1000 MCM'],
+  [590,'1250 MCM'],[625,'1500 MCM'],[650,'1750 MCM'],[665,'2000 MCM']
 ];
 // Aluminum 75°C: [max amps, wire size]
 var AL75=[
@@ -599,53 +611,91 @@ var AL75=[
   [75,'3 AWG'],[90,'2 AWG'],[100,'1 AWG'],[120,'1/0 AWG'],[135,'2/0 AWG'],
   [155,'3/0 AWG'],[180,'4/0 AWG'],[205,'250 MCM'],[230,'300 MCM'],
   [250,'350 MCM'],[270,'400 MCM'],[310,'500 MCM'],[340,'600 MCM'],
-  [375,'700 MCM'],[385,'750 MCM'],[395,'800 MCM'],[425,'900 MCM'],[445,'1000 MCM']
+  [375,'700 MCM'],[385,'750 MCM'],[395,'800 MCM'],[425,'900 MCM'],[445,'1000 MCM'],
+  [485,'1250 MCM'],[520,'1500 MCM'],[545,'1750 MCM'],[560,'2000 MCM']
 ];
 // Service conductors — NEC Table 310.12 (service @ 83% loading)
 // [max amps, copper size, aluminum size]
+// NEC Table 310.12 — Single-Phase Dwelling Services and Feeders
+// [Service/Feeder Rating (A), Copper, Aluminum or Copper-Clad Aluminum]
+// Exact values from NEC 310.12 image (100A–400A range only)
 var SVC_TABLE=[
-  [100,'4 AWG','2 AWG'],
-  [110,'3 AWG','1 AWG'],
-  [125,'2 AWG','1/0 AWG'],
-  [150,'1 AWG','2/0 AWG'],
-  [175,'1/0 AWG','3/0 AWG'],
-  [200,'2/0 AWG','4/0 AWG'],
-  [225,'3/0 AWG','250 MCM'],
-  [250,'4/0 AWG','300 MCM'],
-  [300,'250 MCM','350 MCM'],
-  [350,'350 MCM','500 MCM'],
-  [400,'400 MCM','600 MCM']
+  [100, '4 AWG',   '2 AWG'  ],
+  [110, '3 AWG',   '1 AWG'  ],
+  [125, '2 AWG',   '1/0 AWG'],
+  [150, '1 AWG',   '2/0 AWG'],
+  [175, '1/0 AWG', '3/0 AWG'],
+  [200, '2/0 AWG', '4/0 AWG'],
+  [225, '3/0 AWG', '250 kcmil'],
+  [250, '4/0 AWG', '300 kcmil'],
+  [300, '250 kcmil','350 kcmil'],
+  [350, '350 kcmil','500 kcmil'],
+  [400, '400 kcmil','600 kcmil']
 ];
 function svcWire(a,isAl){
   for(var i=0;i<SVC_TABLE.length;i++) if(a<=SVC_TABLE[i][0]) return isAl?SVC_TABLE[i][2]:SVC_TABLE[i][1];
   return isAl?'600 MCM':'400 MCM';
 }
+// getFeederWire: picks correct table based on user selection
+// Both 310.12 and 310.16 size conductors for the minimum service/OCPD rating,
+// not raw demand amps — the conductor must be rated for the breaker protecting it.
+// NEC 310.12 applies ONLY to single-set conductors. Parallel sets MUST use 310.16.
+function getFeederWire(a,isAl){
+  var tbl=gs('feeder_table');
+  var sets=parseInt(gs('sets'))||1;
+  var svcA=minSvc(a);  // size for minimum OCPD/service rating, not raw demand amps
+  if(tbl==='310_12' && sets===1){
+    if(svcA>=100&&svcA<=400) return svcWire(svcA,isAl);
+    // Outside 310.12 range — use 310.16 based on service rating
+    return wireSize(svcA,isAl?AL75:CU75);
+  }
+  // 310.16 — conductor sized for minimum service/OCPD rating
+  return wireSize(svcA,isAl?AL75:CU75);
+}
+// Get the table label for display on the summary card only
+function feederTableLabel(){
+  var tbl=gs('feeder_table');
+  if(tbl==='310_12'){
+    var svcA=minSvc(parseFloat(document.getElementById('s_amps').textContent)||0);
+    if(svcA>=100&&svcA<=400) return '(NEC 310.12)';
+    return '(NEC 310.16 — outside 310.12 range)';
+  }
+  return '(NEC 310.16)';
+}
 
 // EGC per NEC Table 250.122 (exact from EGC Sizing sheet)
 // [max OCPD amps, copper, aluminum]
+// NEC Table 250.122 — EGC sizing (from spreadsheet EGC Sizing sheet, up to 5000A OCPD)
 var EGC_TABLE=[
-  [15,'14 AWG','12 AWG'],
-  [20,'12 AWG','10 AWG'],
-  [60,'10 AWG','8 AWG'],
-  [100,'8 AWG','6 AWG'],
-  [200,'6 AWG','4 AWG'],
-  [300,'4 AWG','2 AWG'],
-  [400,'3 AWG','1 AWG'],
-  [500,'2 AWG','1/0 AWG'],
-  [600,'1 AWG','2/0 AWG'],
-  [800,'1/0 AWG','3/0 AWG'],
-  [1000,'2/0 AWG','4/0 AWG']
+  [15,  '14 AWG', '12 AWG' ],
+  [20,  '12 AWG', '10 AWG' ],
+  [60,  '10 AWG', '8 AWG'  ],
+  [100, '8 AWG',  '6 AWG'  ],
+  [200, '6 AWG',  '4 AWG'  ],
+  [300, '4 AWG',  '2 AWG'  ],
+  [400, '3 AWG',  '1 AWG'  ],
+  [500, '2 AWG',  '1/0 AWG'],
+  [600, '1 AWG',  '2/0 AWG'],
+  [800, '1/0 AWG','3/0 AWG'],
+  [1000,'2/0 AWG','4/0 AWG'],
+  [1200,'3/0 AWG','250 MCM'],
+  [1600,'4/0 AWG','350 MCM'],
+  [2000,'250 MCM','400 MCM'],
+  [2500,'350 MCM','600 MCM'],
+  [3000,'400 MCM','600 MCM'],
+  [4000,'500 MCM','750 MCM'],
+  [5000,'700 MCM','1200 MCM']
 ];
 function egcWire(ocpd,isAl){
   for(var i=0;i<EGC_TABLE.length;i++) if(ocpd<=EGC_TABLE[i][0]) return isAl?EGC_TABLE[i][2]:EGC_TABLE[i][1];
-  return isAl?'4/0 AWG':'2/0 AWG';
+  return isAl?'1200 MCM':'800 MCM';
 }
 
 function wireSize(a,tbl){for(var i=0;i<tbl.length;i++)if(a<=tbl[i][0])return tbl[i][1];return tbl[tbl.length-1][1];}
 // svcWire() now inlined in SVC_TABLE above
 // egcWire() now inlined in EGC_TABLE above
 function poolWire(a,isAl){return wireSize(a,isAl?AL75:CU75);}
-function minSvc(a){var s=[100,110,125,150,175,200,225,250,300,350,400,450,500,600,700,800];for(var i=0;i<s.length;i++)if(a<=s[i])return s[i];return 800;}
+function minSvc(a){var s=[100,110,125,150,175,200,225,250,300,350,400,450,500,600,700,800,1000,1200,1600,2000,2500,3000,4000,5000];for(var i=0;i<s.length;i++)if(a<=s[i])return s[i];return 5000;}
 
 // Cooking: optional method uses raw VA directly (no Col C demand factor)
 
@@ -684,7 +734,7 @@ var CU_OPTS=[[0,'— none —'],[1840,'1 ton (1,840)'],[2200,'1.5 ton (2,200)'],
 // SH_OPTS: [total_VA, heat_element_VA, blower_VA, label]
 // Blower is always at 100%; only heat_element gets the demand factor
 var SH_OPTS=[
-  [0,    0,     0,    '— GAS / none —'],
+  [0,    0,     0,    '— None (0 VA) —'],
   [5800, 5000,  800,  '5 kW + 800 blwr = 5,800'],
   [8300, 7500,  800,  '7.5 kW + 800 blwr = 8,300'],
   [8800, 8000,  800,  '8 kW + 800 blwr = 8,800'],
@@ -729,8 +779,6 @@ var APPLS=[
   {id:'fpump',name:'Fountain Pump',      qty:0, va:0,     volt:'120', canGas:false, isMotor:true,  vaOpts:[]},
   {id:'elev', name:'Elevator',          qty:0, va:0,     volt:'240', canGas:false, isMotor:true,  vaOpts:[]},
   // Pool Equip Panel row is generated automatically from Pool tab — not in APPLS array
-  {id:'sp1',  name:'Spare 240V',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,1500,2000,3000,5000]},
-  {id:'sp2',  name:'Spare 240V',        qty:0, va:0,     volt:'240', canGas:false, isMotor:false, vaOpts:[0,1500,2000,3000,5000]},
 ];
 
 // Pool pumps and non-continuous loads are fully dynamic
@@ -891,7 +939,7 @@ function addCookItem(type, isGas, va){
   div.id='ci_'+cid;
   var label=(type==='cooktop'?'Cooktop':'Oven / Range')+' '+n;
   // Build wattage select 5000-12500 in 500 steps + 0 + custom
-  var opts='<option value="0"'+(va===0?' selected':'')+'>0 — Gas / Not installed</option>';
+  var opts='<option value="0"'+(va===0?' selected':'')+'>— None (0 VA)</option>';
   for(var w=5000;w<=12500;w+=500){
     var s=(va===w)?' selected':'';
     opts+='<option value="'+w+'"'+s+'>'+(w/1000).toFixed(1)+' kW ('+w.toLocaleString()+' VA)</option>';
@@ -954,10 +1002,10 @@ function buildPool(){
     +'</span>'
     +'<div class="pool-inp" style="display:flex;align-items:center;gap:6px;">'
     +'<select id="qty_ph35" onchange="calc()" style="width:55px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
-    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option>'
+    +'<option value="0">0</option><option value="1" selected>1</option><option value="2">2</option>'
     +'</select>'
     +'<span style="font-size:11px;color:var(--text3);">×</span>'
-    +buildMotorSel("va_ph35", 6250, "240")
+    +buildMotorSel("va_ph35", 6440, "240")
     +'</div></div>'
     // ── Pool Heater 5 ton ──
     +'<div class="pool-row">'
@@ -983,7 +1031,7 @@ function buildPool(){
     +'</span>'
     +'<div class="pool-inp">'
     +'<select id="qty_plight" onchange="calc()" style="width:60px;border:1px solid var(--border);border-radius:var(--rs);padding:5px 4px;font-size:12px;background:#fff;">'
-    +'<option value="0" selected>0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>'
+    +'<option value="0">0</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>'
     +'</select>'
     +'</div></div>'
     // ── Blower ──
@@ -993,7 +1041,7 @@ function buildPool(){
     +'<option value="240" selected>240V</option><option value="120">120V</option>'
     +'</select>'
     +'</span>'
-    +'<div class="pool-inp">'+buildMotorSel("va_blower",0,"240")+'</div></div>'
+    +'<div class="pool-inp">'+buildMotorSel("va_blower",1587,"240")+'</div></div>'
     // ── Dynamic sections ──
     +'<div id="pool_pumps_section"></div>'
     +'<div id="pool_nc_section"></div>';
@@ -1111,7 +1159,7 @@ function updateMotorVolt(selId, newVolt){
   if(!sel) return;
   var oldVA=parseFloat(sel.value)||0;
   var v=parseInt(newVolt)||240;
-  var html='<option value="0">— none —</option>';
+  var html='<option value="0">— None (0 VA) —</option>';
   for(var i=1;i<MOTOR_OPTS.length;i++){
     var mo=MOTOR_OPTS[i];
     var va=hpVA(mo.hp,v);
@@ -1125,7 +1173,7 @@ function updateMotorVolt(selId, newVolt){
 
 function buildMotorSel(id, defVA, volt){
   var s='<select id="'+id+'" onchange="calc()" style="border:1px solid var(--border);border-radius:var(--rs);padding:5px 6px;font-size:11px;background:#fff;width:100%;">';
-  s+='<option value="0">— none —</option>';
+  s+='<option value="0">— None (0 VA) —</option>';
   for(var i=1;i<MOTOR_OPTS.length;i++){
     var mo=MOTOR_OPTS[i];
     var va=hpVA(mo.hp, parseInt(volt)||240);
@@ -1314,18 +1362,67 @@ function calc(){
   var svcDem=baseDem+s2;  // HVAC added at 100% after demand factor
   var allLoads=s1+s2+appDem+s4+s5; // total connected for display
   var amps=svcDem/240;
-  // Neutral per NEC 220.61: first 200A @ 100%, above 200A @ 70%
-  var neutral_amps=amps<=200?amps:200+(amps-200)*0.70;
+  // ── Neutral per NEC 220.61 ──
+  // Neutral carries UNBALANCED (120V) loads only:
+  //   Step 1: all 120V (lighting + sm appl + laundry) @ 100%
+  //   Step 3: 120V appliances only (tracked in totNeut120) @ 100%
+  //   Step 4: electric dryer @ 70% per NEC 220.61(B)(2)
+  //           gas dryer control = 120V @ 100%
+  //   Step 5: cooking ranges are 240V — heating elements DO NOT flow through neutral
+  //           Only negligible 120V clock/timer loads; excluded per NEC 220.61(B)(2) interpretation
+  //   240V loads (HVAC, water heater, pool) = DO NOT flow through neutral
+  var neutralDryerVA=0;
+  for(var n=1;n<=dryerCount;n++){
+    if(!document.getElementById('dryer_'+n)) continue;
+    if(gc('gas_dry'+n)){
+      neutralDryerVA+=gv('qty_dry'+n)*250;  // gas dryer: 120V control load @ 100%
+    } else {
+      neutralDryerVA+=gv('qty_dry'+n)*gv('va_dry'+n)*0.70;  // electric: 70% per NEC 220.61(B)(2)
+    }
+  }
+  // Cooking: NEC 220.61(B)(2) explicitly permits 70% of cooking demand for neutral sizing
+  var neutralCookVA=s5*0.70;
+  var neutralVA=s1+totNeut120+neutralDryerVA+neutralCookVA;
+  // NEC 220.61(A): neutral shall not exceed demand amps of ungrounded conductors
+  // Apply 200A threshold: first 200A @ 100%, above 200A @ 70%
+  var neutral_amps_raw=neutralVA/240;
+  // Neutral cannot exceed the feeder demand amps (NEC 220.61 doesn't require larger neutral than feeder)
+  var neutral_amps_uncapped=neutral_amps_raw<=200?neutral_amps_raw:200+(neutral_amps_raw-200)*0.70;
+  var neutral_amps=Math.min(neutral_amps_uncapped, amps);  // neutral <= feeder always
   var svcSize=minSvc(amps);
   var amps_per=amps/sets;
   var neut_per=neutral_amps/sets;
-  var feederWire=svcWire(amps_per,isAl);
-  var neutralWire=svcWire(neut_per,isAl);
+  var feederWire=getFeederWire(amps_per,isAl);
+  // Neutral always uses 310.16 (per NEC 220.61 — neutral is not a service conductor)
+  // Neutral wire from 310.16 75°C (neutral is not a service entrance conductor)
+  // Neutral wire also sized for minimum OCPD rating per set
+  var neutSvcA=minSvc(neutral_amps/sets);
+  var neutralWire=wireSize(neutSvcA,isAl?AL75:CU75);
   var egc=egcWire(svcSize,isAl);
 
   // ── Parallel conductor warning — NEC 310.10(H) min 1/0 AWG ──
   var PARALLEL_MIN_ORDER = ['14 AWG','12 AWG','10 AWG','8 AWG','6 AWG','4 AWG',
     '3 AWG','2 AWG','1 AWG'];  // sizes SMALLER than 1/0 — not permitted in parallel
+  // Feeder table range warning for 310.12
+  var ftWarn=document.getElementById('feeder_table_note');
+  if(ftWarn){
+    var svcRating=minSvc(amps_per);
+    if(gs('feeder_table')==='310_12'){
+      if(sets>1){
+        ftWarn.innerHTML='⚠️ <strong>NEC 310.12 cannot be used for parallel conductors.</strong> Switched to NEC 310.16 automatically.';
+        ftWarn.style.color='var(--amber)';
+      } else if(svcRating<100||svcRating>400){
+        ftWarn.textContent='⚠ Service = '+svcRating+'A — outside 310.12 range (100–400A). Using 310.16.';
+        ftWarn.style.color='var(--amber)';
+      } else {
+        ftWarn.textContent='Service = '+svcRating+'A — within 310.12 range (100–400A), single set ✓';
+        ftWarn.style.color='var(--green)';
+      }
+    } else {
+      ftWarn.textContent='NEC 310.16 — 75°C column, standard ampacity table';
+      ftWarn.style.color='var(--text3)';
+    }
+  }
   var parallelWarn = document.getElementById('parallel_warn');
   if(parallelWarn){
     var isTooSmall = sets>1 && PARALLEL_MIN_ORDER.indexOf(feederWire) !== -1;
@@ -1345,9 +1442,46 @@ function calc(){
   sv('s_dem',Math.round(svcDem));
   sv('s_amps',amps.toFixed(1));
   sv('s_svc',svcSize);
-  sv('s_neut',neutral_amps.toFixed(1));
-  sv('s_feed',feederWire+(sets>1?' ×'+sets:''));
-  document.getElementById('s_mat').textContent=isAl?'Aluminum 75°C':'Copper 75°C';
+  sv('s_neut',neutral_amps.toFixed(1));  // NEC 220.61 neutral amps
+  // Add table label only on the summary card (s_feed)
+  // 310.12 cannot be used with parallel conductors — force 310.16 label when sets > 1
+  var tblSuffix;
+  if(gs('feeder_table')==='310_12' && sets===1){
+    var svcCheck=minSvc(amps_per);
+    if(svcCheck>=100&&svcCheck<=400){
+      tblSuffix=' (NEC 310.12)';
+    } else {
+      tblSuffix=' (NEC 310.16—outside 310.12 range)';
+    }
+  } else if(gs('feeder_table')==='310_12' && sets>1){
+    tblSuffix=' (NEC 310.16—310.12 not permitted for parallel conductors)';
+  } else {
+    tblSuffix=' (NEC 310.16)';
+  }
+  sv('s_feed',feederWire+(sets>1?' ×'+sets:'')+tblSuffix);
+  // Parallel requirement note: if single-set and conductor maxes out table
+  var parallelNote=document.getElementById('parallel_note');
+  if(parallelNote){
+    var cuMax=665, alMax=560;  // max amps for 2000 MCM per NEC 310.16 75°C
+    var maxA=isAl?alMax:cuMax;
+    if(sets===1&&amps>maxA){
+      var minSets=Math.ceil(amps/maxA);
+      parallelNote.style.display='block';
+      parallelNote.innerHTML='⚡ <strong>Parallel conductors required:</strong> '
+        +amps.toFixed(1)+'A exceeds max single-conductor ampacity ('
+        +maxA+'A / 2000 MCM). Minimum <strong>'+minSets+' sets</strong> required. '
+        +'Use NEC 310.16 for parallel conductors.';
+    } else if(sets>1&&amps/sets>maxA){
+      parallelNote.style.display='block';
+      parallelNote.innerHTML='⚡ <strong>Additional sets required:</strong> '
+        +(amps/sets).toFixed(1)+'A per set exceeds 2000 MCM max ('
+        +maxA+'A). Increase sets.';
+    } else {
+      parallelNote.style.display='none';
+    }
+  }
+  var tblName=(gs('feeder_table')==='310_12'&&sets===1)?'NEC 310.12 (83%)':'NEC 310.16 (75°C)';
+  document.getElementById('s_mat').textContent=(isAl?'Aluminum':'Copper')+' · '+tblName;
   sv('s_nwire',neutralWire);
   sv('s_egc',egc);
   sv('br1',fmt(s1)+' VA');
@@ -1372,8 +1506,8 @@ function calc(){
     +'<div class="calc-line" style="background:var(--blue-lt);padding:6px;border-radius:4px;"><span><strong>Service demand (NEC 220.82)</strong></span><span class="cv"><strong>'+fmt(Math.round(svcDem))+' VA</strong></span></div>'
     +'<div class="calc-line"><span>÷ 240V = demand amps</span><span class="cv">'+amps.toFixed(2)+' A</span></div>'
     +'<div class="calc-line"><span>Min. service size (NEC 230.42)</span><span class="cv">'+svcSize+' A</span></div>'
-    +'<div class="calc-line"><span>Neutral (NEC 220.61): ≤200A@100%, >200A@70%</span><span class="cv">'+neutral_amps.toFixed(2)+' A</span></div>'
-    +'<div class="calc-line"><span>Feeder ('+sets+' set'+(sets>1?'s':'')+', '+amps_per.toFixed(1)+'A/set, NEC 310.16 75°C)</span><span class="cv">'+feederWire+'</span></div>'
+    +'<div class="calc-line"><span>Neutral (NEC 220.61) — s1+120V appls+dryer×70%+cooking×70%</span><span class="cv">'+neutral_amps.toFixed(2)+' A</span></div>'
+    +'<div class="calc-line"><span>Feeder ('+sets+' set'+(sets>1?'s':'')+', '+amps_per.toFixed(1)+'A/set)</span><span class="cv">'+feederWire+'</span></div>'
     +'<div class="calc-line"><span>Neutral wire (NEC 310.16 75°C)</span><span class="cv">'+neutralWire+'</span></div>'
     +'<div class="calc-line"><span>EGC (NEC 250.122, OCPD='+svcSize+'A)</span><span class="cv">'+egc+'</span></div>'
     +'<div class="calc-line"><span>Generator kW needed</span><span class="cv">'+kw.toFixed(1)+' kW → '+gen+'</span></div>';
@@ -1432,6 +1566,16 @@ window.addEventListener('load',function(){
   buildAHU();
   buildAppl();
   buildPool();
+  addPoolPump();  // default: 1 pool pump
+  // Set pool pump to 1.5 HP = 2300 VA (NEC 430.248 at 230V)
+  var ppva1=document.getElementById('ppva_1');
+  if(ppva1){
+    ppva1.value='2300';
+    // Select the matching option
+    for(var _o=0;_o<ppva1.options.length;_o++){
+      if(ppva1.options[_o].value==='2300'){ppva1.options[_o].selected=true;break;}
+    }
+  }
   addDryer(false,5000,1);
   addCookItem('cooktop',false,0);
   addCookItem('oven',false,0);
