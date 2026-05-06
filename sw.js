@@ -19,7 +19,7 @@
 // ╚══════════════════════════════════════════════════════════════╝
 
 // ── ① CHANGE THIS FOR EACH REPO ───────────────────────────────
-const CACHE_NAME    = 'aog-install-v1.2';   // <-- update per site
+const CACHE_NAME    = 'aog-loadcalc-v1.2';   // <-- update per site
 const RUNTIME_CACHE = CACHE_NAME + '-runtime';
 
 // ── ② Shell assets to pre-cache on install ────────────────────
